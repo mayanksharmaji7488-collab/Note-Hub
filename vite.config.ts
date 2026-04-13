@@ -3,6 +3,8 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
+const clientBuildOutDir = process.env.CLIENT_BUILD_OUT_DIR?.trim() || "dist/public";
+
 export default defineConfig({
   plugins: [
     react(),
@@ -28,7 +30,7 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path.resolve(import.meta.dirname, clientBuildOutDir),
     emptyOutDir: true,
   },
   server: {
