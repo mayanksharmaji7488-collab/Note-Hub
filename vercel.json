@@ -1,12 +1,9 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm install --include=dev",
   "buildCommand": "npm run build:client",
-  "outputDirectory": "dist/public",
+  "outputDirectory": "public",
   "rewrites": [
-    { "source": "/notes/:path*", "destination": "/index.html" },
-    { "source": "/library", "destination": "/index.html" },
-    { "source": "/auth", "destination": "/index.html" },
-    { "source": "/upload", "destination": "/index.html" },
-    { "source": "/profile", "destination": "/index.html" },
-    { "source": "/study", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

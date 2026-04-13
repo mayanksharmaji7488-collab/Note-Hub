@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx server/index.ts",
     "build": "tsx script/build.ts",
-    "build:client": "vite build",
+    "build:client": "cross-env CLIENT_BUILD_OUT_DIR=public vite build",
     "start": "cross-env NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "db:bootstrap": "node script/bootstrap-downloads.cjs",
