@@ -165,10 +165,13 @@ export function setupStudyHub(
   storage: IStorage,
   sessionMiddleware: RequestHandler,
 ) {
+  const allowedOrigins =
+    process.env.ALLOWED_ORIGINS?.split(",").map((value) => value.trim()).filter(Boolean) ?? [];
+
   const io = new SocketIOServer(httpServer, {
     path: "/socket.io",
     cors: {
-      origin: true,
+      origin: allowedOrigins.length > 0 ? allowedOrigins : true,
       credentials: true,
     },
   });

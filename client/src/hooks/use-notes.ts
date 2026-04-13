@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { resolveApiUrl } from "@/lib/backend";
 
 export function useNotes(search?: string, opts?: { enabled?: boolean }) {
   return useQuery({
@@ -11,7 +12,7 @@ export function useNotes(search?: string, opts?: { enabled?: boolean }) {
         ? `${api.notes.list.path}?search=${encodeURIComponent(search)}`
         : api.notes.list.path;
 
-      const res = await fetch(url, { credentials: "include" });
+      const res = await fetch(resolveApiUrl(url), { credentials: "include" });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         const message =
@@ -32,7 +33,7 @@ export function useAllNotes(search?: string, opts?: { enabled?: boolean }) {
       if (search) params.set("search", search);
       const url = `${api.notes.list.path}?${params.toString()}`;
 
-      const res = await fetch(url, { credentials: "include" });
+      const res = await fetch(resolveApiUrl(url), { credentials: "include" });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         const message =
@@ -60,7 +61,7 @@ export function useNotesByDate(
       const params = new URLSearchParams({ date: dateParam });
       if (search) params.set("search", search);
 
-      const res = await fetch(`${api.notes.byDate.path}?${params.toString()}`, {
+      const res = await fetch(resolveApiUrl(`${api.notes.byDate.path}?${params.toString()}`), {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to fetch notes");
@@ -75,7 +76,7 @@ export function useNote(id: number) {
     queryKey: [api.notes.get.path, id],
     queryFn: async () => {
       const url = buildUrl(api.notes.get.path, { id });
-      const res = await fetch(url, { credentials: "include" });
+      const res = await fetch(resolveApiUrl(url), { credentials: "include" });
       if (res.status === 404) return null;
       if (!res.ok) throw new Error("Failed to fetch note");
       return api.notes.get.responses[200].parse(await res.json());
@@ -89,7 +90,7 @@ export function useCreateNote() {
 
   return useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch(api.notes.create.path, {
+      const res = await fetch(resolveApiUrl(api.notes.create.path), {
         method: api.notes.create.method,
         body: formData,
         credentials: "include",
@@ -131,7 +132,7 @@ export function useDeleteNote() {
   return useMutation({
     mutationFn: async (noteId: number) => {
       const url = buildUrl(api.notes.remove.path, { id: noteId });
-      const res = await fetch(url, {
+      const res = await fetch(resolveApiUrl(url), {
         method: api.notes.remove.method,
         credentials: "include",
       });
@@ -168,7 +169,7 @@ export function useMyUploads() {
   return useQuery({
     queryKey: [api.me.uploads.path],
     queryFn: async () => {
-      const res = await fetch(api.me.uploads.path, { credentials: "include" });
+      const res = await fetch(resolveApiUrl(api.me.uploads.path), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch uploads");
       return api.me.uploads.responses[200].parse(await res.json());
     },
@@ -179,7 +180,7 @@ export function useMyDownloads() {
   return useQuery({
     queryKey: [api.me.downloads.path],
     queryFn: async () => {
-      const res = await fetch(api.me.downloads.path, { credentials: "include" });
+      const res = await fetch(resolveApiUrl(api.me.downloads.path), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch downloads");
       return api.me.downloads.responses[200].parse(await res.json());
     },
@@ -193,7 +194,7 @@ export function useRecordDownload() {
   return useMutation({
     mutationFn: async (noteId: number) => {
       const url = buildUrl(api.notes.download.path, { id: noteId });
-      const res = await fetch(url, {
+      const res = await fetch(resolveApiUrl(url), {
         method: api.notes.download.method,
         credentials: "include",
       });

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
 import type { UserIdentityUpdateInput, VerifyEmailInput, VerifyMobileInput } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { resolveApiUrl } from "@/lib/backend";
 
 export function useUserProfile() {
   const queryClient = useQueryClient();
@@ -10,7 +11,7 @@ export function useUserProfile() {
   const profileQuery = useQuery({
     queryKey: [api.user.profile.path],
     queryFn: async () => {
-      const res = await fetch(api.user.profile.path, { credentials: "include" });
+      const res = await fetch(resolveApiUrl(api.user.profile.path), { credentials: "include" });
       if (res.status === 401) return null;
       if (!res.ok) throw new Error("Failed to fetch profile");
       return api.user.profile.responses[200].parse(await res.json());
@@ -20,7 +21,7 @@ export function useUserProfile() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (input: UserIdentityUpdateInput) => {
-      const res = await fetch(api.user.updateProfile.path, {
+      const res = await fetch(resolveApiUrl(api.user.updateProfile.path), {
         method: api.user.updateProfile.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -48,7 +49,7 @@ export function useUserProfile() {
 
   const verifyEmailMutation = useMutation({
     mutationFn: async (input: VerifyEmailInput) => {
-      const res = await fetch(api.user.verifyEmail.path, {
+      const res = await fetch(resolveApiUrl(api.user.verifyEmail.path), {
         method: api.user.verifyEmail.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -85,7 +86,7 @@ export function useUserProfile() {
 
   const verifyMobileMutation = useMutation({
     mutationFn: async (input: VerifyMobileInput) => {
-      const res = await fetch(api.user.verifyMobile.path, {
+      const res = await fetch(resolveApiUrl(api.user.verifyMobile.path), {
         method: api.user.verifyMobile.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),

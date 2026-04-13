@@ -11,6 +11,7 @@ import type {
   UserProfileInput,
 } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { resolveApiUrl } from "@/lib/backend";
 
 export function useAuth() {
   const queryClient = useQueryClient();
@@ -19,7 +20,7 @@ export function useAuth() {
   const { data: user, isLoading, error } = useQuery({
     queryKey: [api.auth.me.path],
     queryFn: async () => {
-      const res = await fetch(api.auth.me.path, { credentials: "include" });
+      const res = await fetch(resolveApiUrl(api.auth.me.path), { credentials: "include" });
       if (res.status === 401) return null;
       if (!res.ok) throw new Error("Failed to fetch user");
       return api.auth.me.responses[200].parse(await res.json());
@@ -29,7 +30,7 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: AuthLoginInput) => {
-      const res = await fetch(api.auth.login.path, {
+      const res = await fetch(resolveApiUrl(api.auth.login.path), {
         method: api.auth.login.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -58,7 +59,7 @@ export function useAuth() {
 
   const requestLoginCodeMutation = useMutation({
     mutationFn: async (input: AuthOtpRequestInput) => {
-      const res = await fetch(api.auth.loginCodeRequest.path, {
+      const res = await fetch(resolveApiUrl(api.auth.loginCodeRequest.path), {
         method: api.auth.loginCodeRequest.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -91,7 +92,7 @@ export function useAuth() {
 
   const verifyLoginCodeMutation = useMutation({
     mutationFn: async (input: AuthOtpVerifyInput) => {
-      const res = await fetch(api.auth.loginCodeVerify.path, {
+      const res = await fetch(resolveApiUrl(api.auth.loginCodeVerify.path), {
         method: api.auth.loginCodeVerify.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -118,7 +119,7 @@ export function useAuth() {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: AuthRegisterInput) => {
-      const res = await fetch(api.auth.register.path, {
+      const res = await fetch(resolveApiUrl(api.auth.register.path), {
         method: api.auth.register.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -145,7 +146,7 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(api.auth.logout.path, {
+      const res = await fetch(resolveApiUrl(api.auth.logout.path), {
         method: api.auth.logout.method,
         credentials: "include",
       });
@@ -159,7 +160,7 @@ export function useAuth() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (input: UserProfileInput) => {
-      const res = await fetch(api.auth.updateProfile.path, {
+      const res = await fetch(resolveApiUrl(api.auth.updateProfile.path), {
         method: api.auth.updateProfile.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -186,7 +187,7 @@ export function useAuth() {
 
   const passwordResetRequestMutation = useMutation({
     mutationFn: async (input: PasswordResetRequestInput) => {
-      const res = await fetch(api.auth.passwordResetRequest.path, {
+      const res = await fetch(resolveApiUrl(api.auth.passwordResetRequest.path), {
         method: api.auth.passwordResetRequest.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -216,7 +217,7 @@ export function useAuth() {
 
   const passwordResetConfirmMutation = useMutation({
     mutationFn: async (input: PasswordResetConfirmInput) => {
-      const res = await fetch(api.auth.passwordResetConfirm.path, {
+      const res = await fetch(resolveApiUrl(api.auth.passwordResetConfirm.path), {
         method: api.auth.passwordResetConfirm.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -242,7 +243,7 @@ export function useAuth() {
 
   const changePasswordMutation = useMutation({
     mutationFn: async (input: ChangePasswordInput) => {
-      const res = await fetch(api.auth.changePassword.path, {
+      const res = await fetch(resolveApiUrl(api.auth.changePassword.path), {
         method: api.auth.changePassword.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),

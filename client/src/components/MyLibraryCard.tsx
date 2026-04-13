@@ -17,6 +17,7 @@ import type { Note } from "@shared/schema";
 import { ArrowUpRight, Clock, Loader2, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
+import { resolveUploadedFileUrl } from "@/lib/backend";
 
 export function MyLibraryCard({ maxItems }: { maxItems?: number }) {
   const { data: myUploads, isLoading: uploadsLoading } = useMyUploads();
@@ -119,7 +120,13 @@ export function MyLibraryCard({ maxItems }: { maxItems?: number }) {
                       <div className="flex items-center gap-2 self-start sm:self-auto">
                         <Button
                           variant="outline"
-                          onClick={() => window.open(n.fileUrl, "_blank", "noopener,noreferrer")}
+                          onClick={() =>
+                            window.open(
+                              resolveUploadedFileUrl(n.fileUrl),
+                              "_blank",
+                              "noopener,noreferrer",
+                            )
+                          }
                         >
                           Open <ArrowUpRight className="h-4 w-4" />
                         </Button>
@@ -194,7 +201,13 @@ export function MyLibraryCard({ maxItems }: { maxItems?: number }) {
                       </div>
                       <Button
                         variant="outline"
-                        onClick={() => window.open(n.fileUrl, "_blank", "noopener,noreferrer")}
+                        onClick={() =>
+                          window.open(
+                            resolveUploadedFileUrl(n.fileUrl),
+                            "_blank",
+                            "noopener,noreferrer",
+                          )
+                        }
                       >
                         Open <ArrowUpRight className="h-4 w-4" />
                       </Button>

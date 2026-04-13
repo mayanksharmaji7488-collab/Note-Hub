@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import type { StudyInvite, StudyRoom } from "@shared/study";
+import { getSocketServerUrl } from "@/lib/backend";
 
 type StudyAck = {
   ok: boolean;
@@ -31,7 +32,7 @@ export function useStudyRoom(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
 
-    const nextSocket = io({
+    const nextSocket = io(getSocketServerUrl(), {
       path: "/socket.io",
       withCredentials: true,
     });
