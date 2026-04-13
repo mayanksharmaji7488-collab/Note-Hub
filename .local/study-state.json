@@ -1,0 +1,457 @@
+{
+  "version": 1,
+  "rooms": [
+    {
+      "id": "room-a6dccc",
+      "name": "room",
+      "topic": "112",
+      "description": "nan",
+      "capacity": 8,
+      "isPrivate": true,
+      "inviteCode": "C543A293",
+      "createdAt": "2026-03-31T07:05:53.047Z",
+      "createdBy": {
+        "userId": 2,
+        "name": "24cb10ma40@mitsgwl.ac.in"
+      },
+      "participants": [],
+      "messages": [],
+      "history": [
+        {
+          "id": "b128c45f-b138-44ec-a131-d51d3d649ed7",
+          "roomId": "room-a6dccc",
+          "type": "room_created",
+          "createdAt": "2026-03-31T07:05:53.047Z",
+          "actor": {
+            "userId": 2,
+            "name": "24cb10ma40@mitsgwl.ac.in"
+          },
+          "text": "24cb10ma40@mitsgwl.ac.in created the room."
+        },
+        {
+          "id": "ba44f70d-067e-4e82-87ac-711c594410ba",
+          "roomId": "room-a6dccc",
+          "type": "invite_accepted",
+          "createdAt": "2026-03-31T07:06:05.628Z",
+          "actor": {
+            "userId": 16,
+            "name": "mayanksharmaji7488"
+          },
+          "text": "mayanksharmaji7488 joined with the invite code."
+        },
+        {
+          "id": "81c3cfdb-d75d-426a-99bc-9ff1fb787992",
+          "roomId": "room-a6dccc",
+          "type": "invite_accepted",
+          "createdAt": "2026-03-31T07:08:44.063Z",
+          "actor": {
+            "userId": 17,
+            "name": "shyamsharmaji7488"
+          },
+          "text": "shyamsharmaji7488 joined with the invite code."
+        }
+      ],
+      "session": {
+        "goal": "Start a shared session for 112",
+        "durationMinutes": 45,
+        "startedAt": null,
+        "endsAt": null,
+        "status": "idle",
+        "startedBy": null
+      },
+      "memberUserIds": [
+        16,
+        17
+      ],
+      "updatedAt": "2026-03-31T07:12:57.946Z"
+    },
+    {
+      "id": "study-acf619",
+      "name": "study",
+      "topic": "nznna",
+      "description": "nan",
+      "capacity": 8,
+      "isPrivate": true,
+      "inviteCode": "28D258B2",
+      "createdAt": "2026-03-31T06:53:50.982Z",
+      "createdBy": {
+        "userId": 2,
+        "name": "24cb10ma40@mitsgwl.ac.in"
+      },
+      "participants": [],
+      "messages": [
+        {
+          "id": "0a8468d5-b496-4bed-b041-c907ea840991",
+          "roomId": "study-acf619",
+          "text": "Hey",
+          "createdAt": "2026-03-31T07:02:54.169Z",
+          "user": {
+            "id": 17,
+            "name": "shyamsharmaji7488",
+            "role": "student"
+          }
+        },
+        {
+          "id": "f2fbd9ab-d78e-462a-a1ae-0cb3bf6168b2",
+          "roomId": "study-acf619",
+          "text": "Nigga nigga",
+          "createdAt": "2026-03-31T07:03:27.209Z",
+          "user": {
+            "id": 17,
+            "name": "shyamsharmaji7488",
+            "role": "student"
+          }
+        }
+      ],
+      "history": [
+        {
+          "id": "5c7b311c-34ac-4231-a7ab-b3f7afde6107",
+          "roomId": "study-acf619",
+          "type": "room_created",
+          "createdAt": "2026-03-31T06:53:50.982Z",
+          "actor": {
+            "userId": 2,
+            "name": "24cb10ma40@mitsgwl.ac.in"
+          },
+          "text": "24cb10ma40@mitsgwl.ac.in created the room."
+        },
+        {
+          "id": "e98eb384-4dc1-41d0-8a3c-2f102ada2516",
+          "roomId": "study-acf619",
+          "type": "invite_accepted",
+          "createdAt": "2026-03-31T06:54:15.635Z",
+          "actor": {
+            "userId": 16,
+            "name": "mayanksharmaji7488"
+          },
+          "text": "mayanksharmaji7488 joined with the invite code."
+        },
+        {
+          "id": "e2fe9032-9fa8-4cfc-b81f-c8f932156398",
+          "roomId": "study-acf619",
+          "type": "invite_accepted",
+          "createdAt": "2026-03-31T06:54:21.385Z",
+          "actor": {
+            "userId": 16,
+            "name": "mayanksharmaji7488"
+          },
+          "text": "mayanksharmaji7488 joined with the invite code."
+        },
+        {
+          "id": "f9623807-c350-4bbc-947a-531bc6ba92f2",
+          "roomId": "study-acf619",
+          "type": "invite_accepted",
+          "createdAt": "2026-03-31T07:00:56.662Z",
+          "actor": {
+            "userId": 17,
+            "name": "shyamsharmaji7488"
+          },
+          "text": "shyamsharmaji7488 joined with the invite code."
+        },
+        {
+          "id": "77258f15-9257-41ce-be75-a73e2fa87646",
+          "roomId": "study-acf619",
+          "type": "session_started",
+          "createdAt": "2026-03-31T07:03:55.198Z",
+          "actor": {
+            "userId": 17,
+            "name": "shyamsharmaji7488"
+          },
+          "text": "shyamsharmaji7488 started a 45 minute session: Deep work sprint."
+        },
+        {
+          "id": "effa0a55-731e-4b1f-aa30-85d86aa390e9",
+          "roomId": "study-acf619",
+          "type": "session_started",
+          "createdAt": "2026-03-31T07:03:58.991Z",
+          "actor": {
+            "userId": 17,
+            "name": "shyamsharmaji7488"
+          },
+          "text": "shyamsharmaji7488 started a 45 minute session: Deep work sprint."
+        },
+        {
+          "id": "b7e1c186-4060-4edd-bab1-b79781c83c03",
+          "roomId": "study-acf619",
+          "type": "session_started",
+          "createdAt": "2026-03-31T07:04:10.070Z",
+          "actor": {
+            "userId": 2,
+            "name": "24cb10ma40@mitsgwl.ac.in"
+          },
+          "text": "24cb10ma40@mitsgwl.ac.in started a 45 minute session: Deep work sprint."
+        },
+        {
+          "id": "3a724265-db2a-4c6d-bfea-faad9ba9a892",
+          "roomId": "study-acf619",
+          "type": "session_started",
+          "createdAt": "2026-03-31T07:04:12.667Z",
+          "actor": {
+            "userId": 2,
+            "name": "24cb10ma40@mitsgwl.ac.in"
+          },
+          "text": "24cb10ma40@mitsgwl.ac.in started a 45 minute session: Deep work sprint."
+        }
+      ],
+      "session": {
+        "goal": "Deep work sprint",
+        "durationMinutes": 45,
+        "startedAt": "2026-03-31T07:04:12.667Z",
+        "endsAt": "2026-03-31T07:49:12.667Z",
+        "status": "completed",
+        "startedBy": {
+          "userId": 2,
+          "name": "24cb10ma40@mitsgwl.ac.in"
+        }
+      },
+      "memberUserIds": [
+        16,
+        17
+      ],
+      "updatedAt": "2026-03-31T09:01:32.661Z"
+    },
+    {
+      "id": "study-42bc6e",
+      "name": "study",
+      "topic": "nan",
+      "description": "nan",
+      "capacity": 8,
+      "isPrivate": true,
+      "inviteCode": "BFA617A6",
+      "createdAt": "2026-03-31T06:46:24.683Z",
+      "createdBy": {
+        "userId": 2,
+        "name": "24cb10ma40@mitsgwl.ac.in"
+      },
+      "participants": [],
+      "messages": [
+        {
+          "id": "100c28eb-0218-45ec-b91e-d9103b118ecd",
+          "roomId": "study-42bc6e",
+          "text": "hi",
+          "createdAt": "2026-03-31T06:46:52.288Z",
+          "user": {
+            "id": 16,
+            "name": "mayanksharmaji7488",
+            "role": "student"
+          }
+        },
+        {
+          "id": "5fa9aa74-3e0c-4ed0-9ce2-3693bf9a5580",
+          "roomId": "study-42bc6e",
+          "text": "hello",
+          "createdAt": "2026-03-31T06:46:59.804Z",
+          "user": {
+            "id": 2,
+            "name": "24cb10ma40@mitsgwl.ac.in",
+            "role": "student"
+          }
+        }
+      ],
+      "history": [
+        {
+          "id": "27ad1995-caa5-4482-a7ad-14c4ded1176d",
+          "roomId": "study-42bc6e",
+          "type": "room_created",
+          "createdAt": "2026-03-31T06:46:24.683Z",
+          "actor": {
+            "userId": 2,
+            "name": "24cb10ma40@mitsgwl.ac.in"
+          },
+          "text": "24cb10ma40@mitsgwl.ac.in created the room."
+        },
+        {
+          "id": "a98ad9b8-7a8a-441e-93be-56128c3bf28e",
+          "roomId": "study-42bc6e",
+          "type": "invite_accepted",
+          "createdAt": "2026-03-31T06:46:36.518Z",
+          "actor": {
+            "userId": 16,
+            "name": "mayanksharmaji7488"
+          },
+          "text": "mayanksharmaji7488 joined with the invite code."
+        }
+      ],
+      "session": {
+        "goal": "Start a shared session for nan",
+        "durationMinutes": 45,
+        "startedAt": null,
+        "endsAt": null,
+        "status": "idle",
+        "startedBy": null
+      },
+      "memberUserIds": [
+        16
+      ],
+      "updatedAt": "2026-03-31T06:46:59.804Z"
+    },
+    {
+      "id": "study-40341b",
+      "name": "study",
+      "topic": "nan",
+      "description": "nanapo e",
+      "capacity": 8,
+      "isPrivate": true,
+      "inviteCode": "4DB436E4",
+      "createdAt": "2026-03-31T06:41:22.249Z",
+      "createdBy": {
+        "userId": 2,
+        "name": "24cb10ma40@mitsgwl.ac.in"
+      },
+      "participants": [],
+      "messages": [
+        {
+          "id": "faa48791-14de-48df-a75a-2ccd111b0e0f",
+          "roomId": "study-40341b",
+          "text": "hey",
+          "createdAt": "2026-03-31T06:42:37.454Z",
+          "user": {
+            "id": 2,
+            "name": "24cb10ma40@mitsgwl.ac.in",
+            "role": "student"
+          }
+        },
+        {
+          "id": "335fa70e-8095-458b-b77f-f5f34bc2a1c9",
+          "roomId": "study-40341b",
+          "text": "hello",
+          "createdAt": "2026-03-31T06:43:15.558Z",
+          "user": {
+            "id": 16,
+            "name": "mayanksharmaji7488",
+            "role": "student"
+          }
+        }
+      ],
+      "history": [
+        {
+          "id": "c44c6cad-9ad9-4e5d-b858-c646d7d4c427",
+          "roomId": "study-40341b",
+          "type": "room_created",
+          "createdAt": "2026-03-31T06:41:22.249Z",
+          "actor": {
+            "userId": 2,
+            "name": "24cb10ma40@mitsgwl.ac.in"
+          },
+          "text": "24cb10ma40@mitsgwl.ac.in created the room."
+        },
+        {
+          "id": "9e35d5d0-8d31-4b73-b573-de6c8849dc02",
+          "roomId": "study-40341b",
+          "type": "invite_accepted",
+          "createdAt": "2026-03-31T06:41:58.496Z",
+          "actor": {
+            "userId": 16,
+            "name": "mayanksharmaji7488"
+          },
+          "text": "mayanksharmaji7488 joined with the invite code."
+        },
+        {
+          "id": "d731acb0-4231-4d99-8437-95b74a724801",
+          "roomId": "study-40341b",
+          "type": "session_started",
+          "createdAt": "2026-03-31T06:42:05.624Z",
+          "actor": {
+            "userId": 16,
+            "name": "mayanksharmaji7488"
+          },
+          "text": "mayanksharmaji7488 started a 45 minute session: Deep work sprint."
+        }
+      ],
+      "session": {
+        "goal": "Deep work sprint",
+        "durationMinutes": 45,
+        "startedAt": "2026-03-31T06:42:05.624Z",
+        "endsAt": "2026-03-31T07:27:05.624Z",
+        "status": "completed",
+        "startedBy": {
+          "userId": 16,
+          "name": "mayanksharmaji7488"
+        }
+      },
+      "memberUserIds": [
+        16
+      ],
+      "updatedAt": "2026-03-31T09:01:32.661Z"
+    },
+    {
+      "id": "daily-focus-lab",
+      "name": "Daily Focus Lab",
+      "topic": "Quiet co-study",
+      "description": "Jump into a calm shared room, keep your camera on if you want accountability, and work through your current task list together.",
+      "capacity": 10,
+      "isPrivate": false,
+      "inviteCode": null,
+      "createdAt": "2026-03-31T06:37:10.454Z",
+      "createdBy": {
+        "userId": 0,
+        "name": "NoteShare"
+      },
+      "participants": [],
+      "messages": [],
+      "history": [
+        {
+          "id": "4f7c0185-b876-435c-a2ff-df736d2afe0d",
+          "roomId": "daily-focus-lab",
+          "type": "room_created",
+          "createdAt": "2026-03-31T06:37:10.454Z",
+          "actor": {
+            "userId": 0,
+            "name": "NoteShare"
+          },
+          "text": "NoteShare created the room."
+        }
+      ],
+      "session": {
+        "goal": "Set your top priority and study together",
+        "durationMinutes": 50,
+        "startedAt": null,
+        "endsAt": null,
+        "status": "idle",
+        "startedBy": null
+      },
+      "memberUserIds": [],
+      "updatedAt": "2026-03-31T06:37:10.454Z"
+    },
+    {
+      "id": "exam-cram-circle",
+      "name": "Exam Cram Circle",
+      "topic": "Revision and quick Q&A",
+      "description": "A livelier room for last-minute review, short questions, and peer support before exams.",
+      "capacity": 12,
+      "isPrivate": false,
+      "inviteCode": null,
+      "createdAt": "2026-03-31T06:37:10.454Z",
+      "createdBy": {
+        "userId": 0,
+        "name": "NoteShare"
+      },
+      "participants": [],
+      "messages": [],
+      "history": [
+        {
+          "id": "88a344f0-ffda-4d87-a38f-e963831b7a29",
+          "roomId": "exam-cram-circle",
+          "type": "room_created",
+          "createdAt": "2026-03-31T06:37:10.454Z",
+          "actor": {
+            "userId": 0,
+            "name": "NoteShare"
+          },
+          "text": "NoteShare created the room."
+        }
+      ],
+      "session": {
+        "goal": "Share blockers, then run a 25 minute sprint",
+        "durationMinutes": 25,
+        "startedAt": null,
+        "endsAt": null,
+        "status": "idle",
+        "startedBy": null
+      },
+      "memberUserIds": [],
+      "updatedAt": "2026-03-31T06:37:10.454Z"
+    }
+  ],
+  "invites": []
+}

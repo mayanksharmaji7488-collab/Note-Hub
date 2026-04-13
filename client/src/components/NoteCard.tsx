@@ -4,18 +4,23 @@ import { Button } from "@/components/ui/button";
 import { FileText, Download, User, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import type { Note } from "@shared/schema";
+import { useRecordDownload } from "@/hooks/use-notes";
 
 interface NoteCardProps {
   note: Note & { author: string };
 }
 
 export function NoteCard({ note }: NoteCardProps) {
+  const { mutate: recordDownload } = useRecordDownload();
+
   const handleDownload = () => {
-    window.open(note.fileUrl, '_blank');
+    // Open immediately to avoid popup blockers, then record the download.
+    window.open(note.fileUrl, "_blank", "noopener,noreferrer");
+    recordDownload(note.id);
   };
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 border-border/60 overflow-hidden bg-white/50 backdrop-blur-sm">
+    <Card className="group glass-card hover:shadow-lg transition-all duration-300 border-border/60 overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start gap-4">
           <Badge variant="secondary" className="bg-primary/5 text-primary hover:bg-primary/10 transition-colors">

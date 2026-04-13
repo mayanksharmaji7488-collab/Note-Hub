@@ -1,11 +1,30 @@
 
 import { z } from 'zod';
-import { insertNoteSchema, insertUserSchema, notes, users } from './schema';
+import {
+  authLoginSchema,
+  authOtpRequestSchema,
+  authOtpVerifySchema,
+  authRegisterSchema,
+  changePasswordSchema,
+  insertNoteSchema,
+  notes,
+  passwordResetConfirmSchema,
+  passwordResetRequestSchema,
+  userProfileSchema,
+  userIdentityUpdateSchema,
+  users,
+  verifyEmailSchema,
+  verifyMobileSchema,
+} from './schema';
+import { studyRoomSchema } from "./study";
 
 export const errorSchemas = {
   validation: z.object({
     message: z.string(),
     field: z.string().optional(),
+  }),
+  forbidden: z.object({
+    message: z.string(),
   }),
   notFound: z.object({
     message: z.string(),
@@ -23,7 +42,7 @@ export const api = {
     register: {
       method: 'POST' as const,
       path: '/api/register',
-      input: insertUserSchema,
+      input: authRegisterSchema,
       responses: {
         201: z.custom<typeof users.$inferSelect>(),
         400: errorSchemas.validation,
@@ -32,10 +51,33 @@ export const api = {
     login: {
       method: 'POST' as const,
       path: '/api/login',
-      input: insertUserSchema,
+      input: authLoginSchema,
       responses: {
         200: z.custom<typeof users.$inferSelect>(),
         401: errorSchemas.unauthorized,
+        400: errorSchemas.validation,
+      },
+    },
+    loginCodeRequest: {
+      method: "POST" as const,
+      path: "/api/login/code/request",
+      input: authOtpRequestSchema,
+      responses: {
+        200: z.object({ message: z.string(), devCode: z.string().optional() }),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+        429: errorSchemas.validation,
+      },
+    },
+    loginCodeVerify: {
+      method: "POST" as const,
+      path: "/api/login/code/verify",
+      input: authOtpVerifySchema,
+      responses: {
+        200: z.custom<typeof users.$inferSelect>(),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+        404: errorSchemas.notFound,
       },
     },
     logout: {
@@ -53,6 +95,112 @@ export const api = {
         401: errorSchemas.unauthorized,
       },
     },
+    updateProfile: {
+      method: "PATCH" as const,
+      path: "/api/user",
+      input: userProfileSchema,
+      responses: {
+        200: z.custom<typeof users.$inferSelect>(),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
+    passwordResetRequest: {
+      method: "POST" as const,
+      path: "/api/password/reset/request",
+      input: passwordResetRequestSchema,
+      responses: {
+        200: z.object({ message: z.string(), devCode: z.string().optional() }),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+        429: errorSchemas.validation,
+      },
+    },
+    passwordResetConfirm: {
+      method: "POST" as const,
+      path: "/api/password/reset/confirm",
+      input: passwordResetConfirmSchema,
+      responses: {
+        200: z.object({ message: z.string() }),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+        404: errorSchemas.notFound,
+      },
+    },
+    changePassword: {
+      method: "PUT" as const,
+      path: "/api/user/password",
+      input: changePasswordSchema,
+      responses: {
+        200: z.object({ message: z.string() }),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
+  },
+  user: {
+    profile: {
+      method: "GET" as const,
+      path: "/api/user/profile",
+      responses: {
+        200: z.any(),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    updateProfile: {
+      method: "PUT" as const,
+      path: "/api/user/profile",
+      input: userIdentityUpdateSchema,
+      responses: {
+        200: z.any(),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
+    verifyEmail: {
+      method: "POST" as const,
+      path: "/api/user/verify-email",
+      input: verifyEmailSchema,
+      responses: {
+        200: z.object({ message: z.string(), devCode: z.string().optional() }),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+        429: errorSchemas.validation,
+      },
+    },
+    verifyMobile: {
+      method: "POST" as const,
+      path: "/api/user/verify-mobile",
+      input: verifyMobileSchema,
+      responses: {
+        200: z.object({ message: z.string(), devCode: z.string().optional() }),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+        429: errorSchemas.validation,
+      },
+    },
+  },
+  me: {
+    uploads: {
+      method: "GET" as const,
+      path: "/api/me/uploads",
+      responses: {
+        200: z.array(z.custom<typeof notes.$inferSelect & { author: string }>()),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    downloads: {
+      method: "GET" as const,
+      path: "/api/me/downloads",
+      responses: {
+        200: z.array(
+          z.custom<
+            typeof notes.$inferSelect & { author: string; downloadedAt: Date | null }
+          >(),
+        ),
+        401: errorSchemas.unauthorized,
+      },
+    },
   },
   notes: {
     list: {
@@ -63,6 +211,37 @@ export const api = {
       }).optional(),
       responses: {
         200: z.array(z.custom<typeof notes.$inferSelect & { author: string }>()),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
+    all: {
+      method: "GET" as const,
+      path: "/api/notes/all",
+      input: z
+        .object({
+          search: z.string().optional(),
+        })
+        .optional(),
+      responses: {
+        200: z.array(z.custom<typeof notes.$inferSelect & { author: string }>()),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
+    byDate: {
+      method: "GET" as const,
+      path: "/api/notes/by-date",
+      input: z
+        .object({
+          date: z.string(),
+          search: z.string().optional(),
+        })
+        .optional(),
+      responses: {
+        200: z.array(z.custom<typeof notes.$inferSelect & { author: string }>()),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
       },
     },
     create: {
@@ -75,12 +254,41 @@ export const api = {
         401: errorSchemas.unauthorized,
       },
     },
+    remove: {
+      method: "DELETE" as const,
+      path: "/api/notes/:id",
+      responses: {
+        204: z.any(),
+        401: errorSchemas.unauthorized,
+        403: errorSchemas.forbidden,
+        404: errorSchemas.notFound,
+      },
+    },
     get: {
       method: 'GET' as const,
       path: '/api/notes/:id',
       responses: {
         200: z.custom<typeof notes.$inferSelect & { author: string }>(),
         404: errorSchemas.notFound,
+      },
+    },
+    download: {
+      method: "POST" as const,
+      path: "/api/notes/:id/download",
+      responses: {
+        204: z.any(),
+        401: errorSchemas.unauthorized,
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  study: {
+    rooms: {
+      method: "GET" as const,
+      path: "/api/study/rooms",
+      responses: {
+        200: z.array(studyRoomSchema),
+        401: errorSchemas.unauthorized,
       },
     },
   },

@@ -1,51 +1,88 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Clean Academic/Professional Palette */
-  /* Primary: Deep Royal Blue for trust and professionalism */
-  --primary: 224 76% 48%;
+  /* Colorful academic palette: cool paper + vibrant accents */
+  --background: 224 40% 97%;
+  --foreground: 222 35% 12%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222 35% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 35% 12%;
+
+  --primary: 221 78% 52%;
   --primary-foreground: 210 40% 98%;
 
-  /* Secondary: Soft Slate Blue for accents */
-  --secondary: 214 32% 91%;
-  --secondary-foreground: 222 47% 11%;
+  --secondary: 250 35% 95%;
+  --secondary-foreground: 222 35% 12%;
 
-  /* Backgrounds: Clean white and very light gray */
-  --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
-  
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted: 222 22% 95%;
+  --muted-foreground: 215 16% 44%;
 
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --accent: 32 70% 94%;
+  --accent-foreground: 222 35% 12%;
 
-  --destructive: 0 84.2% 60.2%;
+  --destructive: 0 73% 52%;
   --destructive-foreground: 210 40% 98%;
 
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 224 76% 48%;
+  --border: 224 18% 90%;
+  --input: 224 18% 90%;
+  --ring: 221 78% 52%;
 
-  --radius: 0.75rem;
+  /* Extra tokens used by components */
+  --radius: 0.9rem;
+  --card-border: hsl(var(--border) / 0.8);
+  --popover-border: hsl(var(--border) / 0.8);
+  --primary-border: hsl(var(--primary) / 0.35);
+  --secondary-border: hsl(var(--border) / 0.95);
+  --muted-border: hsl(var(--border) / 0.85);
+  --accent-border: hsl(var(--border) / 0.85);
+  --destructive-border: hsl(var(--destructive) / 0.35);
+  --button-outline: hsl(var(--border) / 0.9);
+  --badge-outline: hsl(var(--border) / 0.9);
 
-  --font-body: 'Inter', sans-serif;
-  --font-display: 'Space Grotesk', sans-serif;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 222 35% 12%;
+  --sidebar-border: 224 18% 90%;
+  --sidebar-ring: 221 78% 52%;
+  --sidebar-primary: 221 78% 52%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 222 22% 95%;
+  --sidebar-accent-foreground: 222 35% 12%;
+
+  --chart-1: 221 78% 52%;
+  --chart-2: 165 70% 34%;
+  --chart-3: 42 95% 55%;
+  --chart-4: 275 70% 62%;
+  --chart-5: 12 85% 56%;
+
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Libre Baskerville", ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
 }
 
 @layer base {
   body {
     @apply bg-background text-foreground antialiased font-body;
-    background-image: radial-gradient(hsl(var(--primary)/0.03) 1px, transparent 1px);
-    background-size: 32px 32px;
+    background-image:
+      radial-gradient(900px 520px at 8% 0%, hsl(var(--primary) / 0.20), transparent 58%),
+      radial-gradient(900px 540px at 110% 12%, hsl(var(--chart-4) / 0.16), transparent 55%),
+      radial-gradient(820px 520px at 70% 110%, hsl(var(--chart-3) / 0.14), transparent 55%),
+      radial-gradient(hsl(var(--foreground) / 0.035) 1px, transparent 1px);
+    background-size: auto, auto, auto, 28px 28px;
+    background-attachment: fixed, fixed, fixed, scroll;
   }
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-display tracking-tight;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.20);
   }
 }
 
@@ -56,10 +93,61 @@
   }
   
   .glass-card {
-    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
+    @apply bg-card/75 backdrop-blur-xl border border-border/60 shadow-[0_18px_60px_-30px_hsl(var(--foreground)/0.30)];
   }
 
   .hover-scale {
     @apply transition-transform duration-200 hover:scale-[1.02];
+  }
+
+  .premium-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .fade-up {
+    animation: fade-up 420ms cubic-bezier(.2,.9,.2,1) both;
+  }
+
+  .shadow-xs {
+    box-shadow:
+      0 1px 0 hsl(var(--foreground) / 0.04),
+      0 1px 2px hsl(var(--foreground) / 0.08);
+  }
+
+  .hover-elevate {
+    transition: transform 180ms cubic-bezier(.2,.9,.2,1), box-shadow 180ms cubic-bezier(.2,.9,.2,1);
+  }
+
+  .hover-elevate:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 12px 30px -20px hsl(var(--foreground) / 0.35),
+      0 1px 0 hsl(var(--foreground) / 0.05);
+  }
+
+  .active-elevate-2:active {
+    transform: translateY(0);
+    box-shadow:
+      0 8px 18px -16px hsl(var(--foreground) / 0.35),
+      0 1px 0 hsl(var(--foreground) / 0.04);
+  }
+
+  .shadcn-card {
+    box-shadow:
+      0 10px 30px -24px hsl(var(--foreground) / 0.35),
+      0 1px 0 hsl(var(--foreground) / 0.04);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
   }
 }

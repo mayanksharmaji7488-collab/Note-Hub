@@ -7,6 +7,10 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import AuthPage from "@/pages/AuthPage";
 import UploadPage from "@/pages/UploadPage";
+import LibraryPage from "@/pages/LibraryPage";
+import AllNotesPage from "@/pages/AllNotesPage";
+import ProfilePage from "@/pages/ProfilePage";
+import StudyTogetherPage from "@/pages/StudyTogetherPage";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 
@@ -15,7 +19,7 @@ function Router() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
@@ -24,8 +28,12 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/notes/all" component={AllNotesPage} />
+      <Route path="/library" component={LibraryPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/upload" component={UploadPage} />
+      <Route path="/profile" component={ProfilePage} />
+      <Route path="/study" component={StudyTogetherPage} />
       <Route component={NotFound} />
     </Switch>
   );

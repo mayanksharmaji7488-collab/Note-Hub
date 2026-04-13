@@ -1,15 +1,22 @@
 
-import { storage } from "./storage";
+import type { IStorage } from "./storage";
 import { hashPassword } from "./auth";
 
-export async function seed() {
+export async function seed(storage: IStorage) {
   const existingUser = await storage.getUserByUsername("student");
   if (!existingUser) {
     console.log("Seeding database...");
     const password = await hashPassword("password123");
     const user = await storage.createUser({
       username: "student",
+      nickName: "Student",
+      fullName: "Demo Student",
+      email: "student@example.com",
+      isEmailVerified: true,
+      role: "student",
       password,
+      department: "CSE",
+      year: 1,
     });
     
     await storage.createNote({
