@@ -5,6 +5,7 @@ import { FileText, Download, User, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import type { Note } from "@shared/schema";
 import { useRecordDownload } from "@/hooks/use-notes";
+import { resolveUploadedFileUrl } from "@/lib/backend";
 
 interface NoteCardProps {
   note: Note & { author: string };
@@ -15,7 +16,7 @@ export function NoteCard({ note }: NoteCardProps) {
 
   const handleDownload = () => {
     // Open immediately to avoid popup blockers, then record the download.
-    window.open(note.fileUrl, "_blank", "noopener,noreferrer");
+    window.open(resolveUploadedFileUrl(note.fileUrl), "_blank", "noopener,noreferrer");
     recordDownload(note.id);
   };
 

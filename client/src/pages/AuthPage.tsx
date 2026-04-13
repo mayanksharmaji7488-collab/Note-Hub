@@ -46,6 +46,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { resolveApiUrl } from "@/lib/backend";
 
 export default function AuthPage() {
   const {
@@ -161,7 +162,7 @@ export default function AuthPage() {
                   variant="outline"
                   className="w-full h-11 gap-2"
                   onClick={() => {
-                    window.location.href = "/api/auth/google/start";
+                    window.location.href = resolveApiUrl("/api/auth/google/start");
                   }}
                 >
                   <FcGoogle className="h-5 w-5" />

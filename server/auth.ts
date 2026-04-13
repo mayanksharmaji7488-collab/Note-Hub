@@ -18,6 +18,7 @@ import {
 } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
+type ExpressRequest = Parameters<Parameters<Express["get"]>[1]>[0];
 
 export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -43,11 +44,39 @@ function sanitizeUser(user: User) {
   };
 }
 
-function getGoogleRedirectUri(req: Parameters<Parameters<Express["get"]>[1]>[0]) {
+function toAbsoluteUrl(base: string, path: string) {
+  const normalizedBase = base.endsWith("/") ? base : `${base}/`;
+  const normalizedPath = path.startsWith("/") ? path.slice(1) : path;
+  return new URL(normalizedPath, normalizedBase).toString();
+}
+
+function getAppUrl(req: ExpressRequest, path = "/") {
+  const fromEnv = process.env.APP_URL?.trim();
+  if (fromEnv) return toAbsoluteUrl(fromEnv, path);
+  const host = req.get("host");
+  return `${req.protocol}://${host}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+function getGoogleRedirectUri(req: ExpressRequest) {
   const fromEnv = process.env.GOOGLE_REDIRECT_URI?.trim();
   if (fromEnv) return fromEnv;
   const host = req.get("host");
   return `${req.protocol}://${host}/api/auth/google/callback`;
+}
+
+function getSessionCookieSameSite(isProduction: boolean): session.CookieOptions["sameSite"] {
+  const explicit = process.env.SESSION_COOKIE_SAME_SITE?.trim().toLowerCase();
+
+  if (explicit === "strict" || explicit === "lax" || explicit === "none") {
+    return explicit;
+  }
+
+  if (!isProduction) return "lax";
+
+  const allowedOrigins =
+    process.env.ALLOWED_ORIGINS?.split(",").map((value) => value.trim()).filter(Boolean) ?? [];
+
+  return allowedOrigins.length > 0 ? "none" : "lax";
 }
 
 function normalizeIdentifier(raw: string): {
@@ -254,22 +283,24 @@ export function setupAuth(app: Express, storage: IStorage) {
 
   app.get("/api/auth/google/callback", async (req, res, next) => {
     try {
+      const authRedirectUrl = getAppUrl(req, "/auth");
+      const successRedirectUrl = getAppUrl(req, "/");
       const code = typeof req.query.code === "string" ? req.query.code : undefined;
       const state = typeof req.query.state === "string" ? req.query.state : undefined;
       const error = typeof req.query.error === "string" ? req.query.error : undefined;
 
       if (error) {
         req.session.googleOAuthState = undefined;
-        return res.redirect("/auth");
+        return res.redirect(authRedirectUrl);
       }
 
       if (!code || !state) {
-        return res.redirect("/auth");
+        return res.redirect(authRedirectUrl);
       }
 
       if (!req.session.googleOAuthState || req.session.googleOAuthState !== state) {
         req.session.googleOAuthState = undefined;
-        return res.redirect("/auth");
+        return res.redirect(authRedirectUrl);
       }
       req.session.googleOAuthState = undefined;
 
@@ -295,7 +326,7 @@ export function setupAuth(app: Express, storage: IStorage) {
 
       if (!tokenRes.ok) {
         console.error("Google OAuth token exchange failed", await tokenRes.text());
-        return res.redirect("/auth");
+        return res.redirect(authRedirectUrl);
       }
 
       const tokenJson = (await tokenRes.json()) as {
@@ -305,7 +336,7 @@ export function setupAuth(app: Express, storage: IStorage) {
       const accessToken =
         typeof tokenJson.access_token === "string" ? tokenJson.access_token : undefined;
       if (!accessToken) {
-        return res.redirect("/auth");
+        return res.redirect(authRedirectUrl);
       }
 
       const userInfoRes = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
@@ -314,7 +345,7 @@ export function setupAuth(app: Express, storage: IStorage) {
 
       if (!userInfoRes.ok) {
         console.error("Google OAuth userinfo fetch failed", await userInfoRes.text());
-        return res.redirect("/auth");
+        return res.redirect(authRedirectUrl);
       }
 
       const userInfo = (await userInfoRes.json()) as {
@@ -329,7 +360,7 @@ export function setupAuth(app: Express, storage: IStorage) {
         typeof userInfo.email_verified === "boolean" ? userInfo.email_verified : undefined;
 
       if (!email || emailVerified === false) {
-        return res.redirect("/auth");
+        return res.redirect(authRedirectUrl);
       }
 
       let user = await storage.getUserByIdentifier(email);
@@ -354,7 +385,7 @@ export function setupAuth(app: Express, storage: IStorage) {
 
       req.login(user, (err) => {
         if (err) return next(err);
-        return res.redirect("/");
+        return res.redirect(successRedirectUrl);
       });
     } catch (err) {
       next(err);
@@ -597,16 +628,20 @@ export function createSessionMiddleware(storage: IStorage, isProduction: boolean
     throw new Error("SESSION_SECRET must be set in production");
   }
 
+  const sameSite = getSessionCookieSameSite(isProduction);
+  const secure = isProduction ? (sameSite === "none" ? true : "auto") : false;
+
   const sessionSettings: session.SessionOptions = {
     name: "notehub.sid",
     secret: process.env.SESSION_SECRET || "dev-only-session-secret",
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
+    proxy: isProduction,
     cookie: {
       httpOnly: true,
-      sameSite: "lax",
-      secure: isProduction ? "auto" : false,
+      sameSite,
+      secure,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },
   };
