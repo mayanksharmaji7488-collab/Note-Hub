@@ -92,15 +92,30 @@ export default function RoomPage() {
     async function init() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 30, min: 10 }
+          },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
         });
         
         if (!mounted) return;
 
         // Initialize streams to false globally, let UI toggles turn them on
-        stream.getVideoTracks().forEach(t => t.enabled = false);
-        stream.getAudioTracks().forEach(t => t.enabled = false);
+        // The 'motion' hint tells WebRTC to drop resolution but keep framerate fluid if network is bad
+        stream.getVideoTracks().forEach(t => {
+          t.enabled = false;
+          if ('contentHint' in t) t.contentHint = 'motion';
+        });
+        stream.getAudioTracks().forEach(t => {
+          t.enabled = false;
+          if ('contentHint' in t) t.contentHint = 'speech';
+        });
 
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
@@ -203,7 +218,13 @@ export default function RoomPage() {
     if (existing) return existing;
 
     const peer = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+        { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+        { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+      ],
     });
 
     peer.addTransceiver("video", { direction: "sendrecv" });
@@ -280,9 +301,6 @@ export default function RoomPage() {
     if (!activeRoom || !currentParticipant) return;
     const connectPeers = async () => {
       for (const participant of remoteParticipants) {
-        if (!participant.isVideoEnabled && !participant.isAudioEnabled && !participant.isScreenSharing) {
-          continue;
-        }
         const peer = await ensurePeerConnection(participant.socketId);
         if (peer.signalingState === "stable" && currentParticipant.socketId < participant.socketId) {
           const offer = await peer.createOffer();
@@ -338,8 +356,20 @@ export default function RoomPage() {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const stream = await navigator.mediaDevices.getDisplayMedia({ 
+        video: {
+          width: { ideal: 1920, max: 2560 },
+          height: { ideal: 1080, max: 1440 },
+          frameRate: { ideal: 15 } // Less framerate needed for screen share, saves bandwidth
+        } 
+      });
       const screenTrack = stream.getVideoTracks()[0];
+      
+      // For screen shares, you want to preserve text readability (resolution) 
+      // over framerate if the user has a poor connection.
+      if ('contentHint' in screenTrack) {
+        screenTrack.contentHint = 'detail';
+      }
       
       screenTrack.onended = () => {
          screenStreamRef.current = null;
