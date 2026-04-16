@@ -11,7 +11,8 @@ import {
   type ChangePasswordInput,
   type UserIdentityUpdateInput,
 } from "@shared/schema";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTheme, type ThemeMode, type ThemeColor } from "@/hooks/use-theme";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +39,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Loader2, MailCheck, PhoneCall } from "lucide-react";
+import { Loader2, MailCheck, PhoneCall, Moon, Sun, Monitor } from "lucide-react";
 
 function statusBadge(verified: boolean) {
   return verified ? (
@@ -56,6 +57,7 @@ export default function ProfilePage() {
   const { user, changePassword, isChangingPassword } = useAuth();
   const { profile, isLoading, updateProfile, isUpdating, verifyEmail, verifyMobile } =
     useUserProfile();
+  const { mode, setMode, color, setColor } = useTheme();
   const [, setLocation] = useLocation();
 
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -326,6 +328,68 @@ export default function ProfilePage() {
                     </div>
                   </form>
                 </Form>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card rounded-3xl border-border/60">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl font-display">Appearance</CardTitle>
+                <CardDescription>Customize your theme and accent colors.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Theme Mode</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <Button 
+                      type="button"
+                      variant={mode === "light" ? "default" : "outline"}
+                      onClick={() => setMode("light")}
+                      className="gap-2"
+                    >
+                      <Sun className="h-4 w-4" /> Light
+                    </Button>
+                    <Button 
+                      type="button"
+                      variant={mode === "dark" ? "default" : "outline"}
+                      onClick={() => setMode("dark")}
+                      className="gap-2"
+                    >
+                      <Moon className="h-4 w-4" /> Dark
+                    </Button>
+                    <Button 
+                      type="button"
+                      variant={mode === "system" ? "default" : "outline"}
+                      onClick={() => setMode("system")}
+                      className="gap-2"
+                    >
+                      <Monitor className="h-4 w-4" /> System
+                    </Button>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Accent Color</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {[
+                      { id: "zinc", className: "bg-zinc-500", label: "Zinc" },
+                      { id: "rose", className: "bg-rose-500", label: "Rose" },
+                      { id: "blue", className: "bg-blue-500", label: "Blue" },
+                      { id: "green", className: "bg-green-500", label: "Green" },
+                      { id: "orange", className: "bg-orange-500", label: "Orange" }
+                    ].map((palette) => (
+                      <Button
+                        type="button"
+                        key={palette.id}
+                        variant={color === palette.id ? "default" : "outline"}
+                        className="gap-2"
+                        onClick={() => setColor(palette.id as ThemeColor)}
+                      >
+                        <div className={`w-3 h-3 rounded-full ${palette.className}`} />
+                        {palette.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 

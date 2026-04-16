@@ -185,7 +185,7 @@ export const api = {
       method: "GET" as const,
       path: "/api/me/uploads",
       responses: {
-        200: z.array(z.custom<typeof notes.$inferSelect & { author: string }>()),
+        200: z.array(z.custom<typeof notes.$inferSelect & { author: string; authorBranch: string | null; authorYear: number | null }>()),
         401: errorSchemas.unauthorized,
       },
     },
@@ -210,7 +210,7 @@ export const api = {
         search: z.string().optional(),
       }).optional(),
       responses: {
-        200: z.array(z.custom<typeof notes.$inferSelect & { author: string }>()),
+        200: z.array(z.custom<typeof notes.$inferSelect & { author: string; authorBranch: string | null; authorYear: number | null }>()),
         400: errorSchemas.validation,
         401: errorSchemas.unauthorized,
       },
@@ -224,7 +224,7 @@ export const api = {
         })
         .optional(),
       responses: {
-        200: z.array(z.custom<typeof notes.$inferSelect & { author: string }>()),
+        200: z.array(z.custom<typeof notes.$inferSelect & { author: string; authorBranch: string | null; authorYear: number | null }>()),
         400: errorSchemas.validation,
         401: errorSchemas.unauthorized,
       },
@@ -239,7 +239,7 @@ export const api = {
         })
         .optional(),
       responses: {
-        200: z.array(z.custom<typeof notes.$inferSelect & { author: string }>()),
+        200: z.array(z.custom<typeof notes.$inferSelect & { author: string; authorBranch: string | null; authorYear: number | null }>()),
         400: errorSchemas.validation,
         401: errorSchemas.unauthorized,
       },
@@ -268,7 +268,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/notes/:id',
       responses: {
-        200: z.custom<typeof notes.$inferSelect & { author: string }>(),
+        200: z.custom<typeof notes.$inferSelect & { author: string; authorBranch: string | null; authorYear: number | null }>(),
         404: errorSchemas.notFound,
       },
     },

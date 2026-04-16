@@ -11,6 +11,7 @@ import LibraryPage from "@/pages/LibraryPage";
 import AllNotesPage from "@/pages/AllNotesPage";
 import ProfilePage from "@/pages/ProfilePage";
 import StudyTogetherPage from "@/pages/StudyTogetherPage";
+import RoomPage from "@/pages/RoomPage";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 
@@ -34,15 +35,24 @@ function Router() {
       <Route path="/upload" component={UploadPage} />
       <Route path="/profile" component={ProfilePage} />
       <Route path="/study" component={StudyTogetherPage} />
+      <Route path="/room/:roomId" component={RoomPage} />
       <Route component={NotFound} />
     </Switch>
   );
+}
+
+import { useTheme } from "@/hooks/use-theme";
+
+function ThemeInjector() {
+  useTheme();
+  return null;
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <ThemeInjector />
         <Router />
         <Toaster />
       </TooltipProvider>

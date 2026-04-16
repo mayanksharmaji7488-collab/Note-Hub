@@ -17,6 +17,10 @@ import {
   type StudyRoom,
   updateMediaStateSchema,
   updateStudySessionSchema,
+  kickStudyParticipantSchema,
+  muteStudyParticipantSchema,
+  updateRoomSettingsSchema,
+  deleteStudyRoomSchema,
 } from "@shared/study";
 import { getStudyStore } from "./studyStore";
 
@@ -311,6 +315,12 @@ export function setupStudyHub(
       const previousRoomId = leaveCurrentRoom(socket);
       if (!previousRoomId) return;
 
+      const currentPresence = roomPresence.get(previousRoomId) ?? [];
+      const room = studyStore.getRoom(previousRoomId);
+      if (room && currentPresence.length === 0 && !room.expiresAt) {
+        studyStore.archiveRoom(previousRoomId);
+      }
+
       await emitRoomState(io, previousRoomId);
       await emitListsForAll(io);
     });
@@ -475,9 +485,98 @@ export function setupStudyHub(
       });
     });
 
+    socket.on("study:kick", async (payload, ack) => {
+      const parsed = kickStudyParticipantSchema.safeParse(payload);
+      if (!parsed.success) return ack?.({ ok: false });
+
+      const room = studyStore.getRoom(parsed.data.roomId);
+      if (!room || room.createdBy.userId !== user.id) {
+        return ack?.({ ok: false, message: "Unauthorized" });
+      }
+
+      io.to(parsed.data.targetSocketId).emit("study:kicked", { roomId: room.id });
+      // Remove from roomPresence is handled by their disconnect/leave, but we can actively leave their socket
+      const targetSocket = io.sockets.sockets.get(parsed.data.targetSocketId);
+      if (targetSocket) {
+        targetSocket.leave(room.id);
+        const previousRoomId = leaveCurrentRoom(targetSocket);
+        if (previousRoomId) {
+          await emitRoomState(io, previousRoomId);
+          await emitListsForAll(io);
+        }
+      }
+      ack?.({ ok: true });
+    });
+
+    socket.on("study:mute", (payload, ack) => {
+      const parsed = muteStudyParticipantSchema.safeParse(payload);
+      if (!parsed.success) return ack?.({ ok: false });
+
+      const room = studyStore.getRoom(parsed.data.roomId);
+      if (!room || room.createdBy.userId !== user.id) {
+        return ack?.({ ok: false, message: "Unauthorized" });
+      }
+
+      io.to(parsed.data.targetSocketId).emit("study:mute_remote", { roomId: room.id });
+      ack?.({ ok: true });
+    });
+
+    socket.on("study:settings_update", async (payload, ack) => {
+      const parsed = updateRoomSettingsSchema.safeParse(payload);
+      if (!parsed.success) return ack?.({ ok: false });
+
+      const room = studyStore.getRoom(parsed.data.roomId);
+      if (!room || room.createdBy.userId !== user.id) {
+        return ack?.({ ok: false, message: "Unauthorized" });
+      }
+
+      studyStore.updateSettings(room.id, parsed.data.allowScreenShare);
+      if (!parsed.data.allowScreenShare) {
+        const participants = roomPresence.get(room.id) ?? [];
+        let changed = false;
+        roomPresence.set(
+          room.id,
+          participants.map((p) => {
+            if (p.isScreenSharing) {
+              changed = true;
+              io.to(p.socketId).emit("study:stop_screen_share", { roomId: room.id });
+              return { ...p, isScreenSharing: false };
+            }
+            return p;
+          })
+        );
+      }
+      await emitRoomState(io, room.id);
+      ack?.({ ok: true });
+    });
+
+    socket.on("study:room_delete", async (payload, ack) => {
+      const parsed = deleteStudyRoomSchema.safeParse(payload);
+      if (!parsed.success) return ack?.({ ok: false, message: "Invalid room deletion" });
+
+      const success = studyStore.deleteRoom(parsed.data.roomId, summarizeUser(user));
+      if (!success) {
+        return ack?.({ ok: false, message: "Unauthorized or room not found" });
+      }
+
+      roomPresence.delete(parsed.data.roomId);
+      
+      io.to(parsed.data.roomId).emit("study:room_closed", { roomId: parsed.data.roomId });
+      io.in(parsed.data.roomId).socketsLeave(parsed.data.roomId);
+
+      await emitListsForAll(io);
+      ack?.({ ok: true });
+    });
+
     socket.on("disconnect", async () => {
       const previousRoomId = leaveCurrentRoom(socket);
       if (!previousRoomId) return;
+
+      const currentPresence = roomPresence.get(previousRoomId) ?? [];
+      const room = studyStore.getRoom(previousRoomId);
+      if (room && currentPresence.length === 0 && !room.expiresAt) {
+        studyStore.archiveRoom(previousRoomId);
+      }
 
       await emitRoomState(io, previousRoomId);
       await emitListsForAll(io);

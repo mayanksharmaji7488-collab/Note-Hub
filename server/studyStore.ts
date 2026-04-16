@@ -63,6 +63,7 @@ function starterRooms(): PersistedStudyRoom[] {
         "Jump into a calm shared room, keep your camera on if you want accountability, and work through your current task list together.",
       capacity: 10,
       isPrivate: false,
+      allowScreenShare: true,
       inviteCode: null,
       createdAt,
       createdBy: { userId: 0, name: "NoteShare" },
@@ -88,6 +89,8 @@ function starterRooms(): PersistedStudyRoom[] {
       },
       memberUserIds: [],
       updatedAt: createdAt,
+      expiresAt: null,
+      isArchived: false,
     },
     {
       id: "exam-cram-circle",
@@ -97,6 +100,7 @@ function starterRooms(): PersistedStudyRoom[] {
         "A livelier room for last-minute review, short questions, and peer support before exams.",
       capacity: 12,
       isPrivate: false,
+      allowScreenShare: true,
       inviteCode: null,
       createdAt,
       createdBy: { userId: 0, name: "NoteShare" },
@@ -122,6 +126,8 @@ function starterRooms(): PersistedStudyRoom[] {
       },
       memberUserIds: [],
       updatedAt: createdAt,
+      expiresAt: null,
+      isArchived: false,
     },
   ];
 }
@@ -139,7 +145,7 @@ export class StudyStore {
     this.normalizeExpiringSessions();
 
     return this.state.rooms
-      .filter((room) => this.canSeeRoom(room, userId))
+      .filter((room) => this.canSeeRoom(room, userId) && !room.isArchived)
       .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
       .map((room) => this.toExternalRoom(room));
   }
@@ -159,6 +165,16 @@ export class StudyStore {
   createRoom(input: CreateStudyRoomInput, creator: StudyActor): StudyRoom {
     const createdAt = nowIso();
     let inviteCode: string | null = null;
+    let expiresAt: string | null = null;
+
+    if (input.endAt) {
+      expiresAt = new Date(input.endAt).toISOString();
+    } else if (input.durationHours || input.durationMinutes) {
+      const ms = ((input.durationHours || 0) * 60 * 60 + (input.durationMinutes || 0) * 60) * 1000;
+      if (ms > 0) {
+        expiresAt = new Date(Date.now() + ms).toISOString();
+      }
+    }
 
     if (input.isPrivate) {
       do {
@@ -179,6 +195,7 @@ export class StudyStore {
       description: input.description,
       capacity: input.capacity,
       isPrivate: input.isPrivate,
+      allowScreenShare: true,
       inviteCode,
       createdAt,
       createdBy: creator,
@@ -204,6 +221,8 @@ export class StudyStore {
       },
       memberUserIds: [],
       updatedAt: createdAt,
+      expiresAt,
+      isArchived: false,
     };
 
     this.state.rooms.unshift(room);
@@ -380,6 +399,36 @@ export class StudyStore {
     this.save();
   }
 
+  updateSettings(roomId: string, allowScreenShare: boolean) {
+    const room = this.state.rooms.find((entry) => entry.id === roomId);
+    if (!room) return;
+
+    room.allowScreenShare = allowScreenShare;
+    room.updatedAt = nowIso();
+    this.save();
+    return this.toExternalRoom(room);
+  }
+
+  archiveRoom(roomId: string) {
+    const room = this.state.rooms.find((entry) => entry.id === roomId);
+    if (!room || room.isArchived) return;
+    room.isArchived = true;
+    room.updatedAt = nowIso();
+    this.save();
+  }
+
+  deleteRoom(roomId: string, actor: StudyActor) {
+    const index = this.state.rooms.findIndex((entry) => entry.id === roomId);
+    if (index === -1) return false;
+    
+    if (this.state.rooms[index].createdBy.userId !== actor.userId) {
+       return false;
+    }
+    this.state.rooms.splice(index, 1);
+    this.save();
+    return true;
+  }
+
   private canSeeRoom(room: PersistedStudyRoom, userId: number) {
     if (!room.isPrivate) return true;
     if (room.createdBy.userId === userId) return true;
@@ -419,6 +468,9 @@ export class StudyStore {
       messages: room.messages,
       history: room.history,
       session: room.session,
+      allowScreenShare: room.allowScreenShare ?? true,
+      expiresAt: room.expiresAt ?? null,
+      isArchived: room.isArchived ?? false,
     };
   }
 
@@ -436,6 +488,12 @@ export class StudyStore {
           ...room.session,
           status: "completed",
         };
+        room.updatedAt = nowIso();
+        changed = true;
+      }
+
+      if (!room.isArchived && room.expiresAt && now >= Date.parse(room.expiresAt)) {
+        room.isArchived = true;
         room.updatedAt = nowIso();
         changed = true;
       }
