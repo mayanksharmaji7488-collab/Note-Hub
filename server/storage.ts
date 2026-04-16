@@ -35,19 +35,19 @@ export interface IStorage {
   
   createNote(note: InsertNote & { userId: number }): Promise<Note>;
   deleteNote(noteId: number): Promise<Note | undefined>;
-  getNotes(scope: CohortScope, search?: string): Promise<(Note & { author: string })[]>;
-  getAllNotes(search?: string): Promise<(Note & { author: string })[]>;
+  getNotes(scope: CohortScope, search?: string): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null })[]>;
+  getAllNotes(search?: string): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null })[]>;
   getNotesByDate(
     scope: CohortScope,
     date: string,
     search?: string,
-  ): Promise<(Note & { author: string })[]>;
+  ): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null })[]>;
   getNote(
     id: number,
     scope: CohortScope,
-  ): Promise<(Note & { author: string }) | undefined>;
-  getNoteAny(id: number): Promise<(Note & { author: string }) | undefined>;
-  getMyUploads(userId: number): Promise<(Note & { author: string })[]>;
+  ): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null }) | undefined>;
+  getNoteAny(id: number): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null }) | undefined>;
+  getMyUploads(userId: number): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null })[]>;
   getMyDownloads(userId: number): Promise<(Note & { author: string; downloadedAt: Date | null })[]>;
   recordDownload(userId: number, noteId: number): Promise<void>;
   
@@ -253,7 +253,7 @@ export class DatabaseStorage implements IStorage {
   async getNotes(
     scope: CohortScope,
     search?: string,
-  ): Promise<(Note & { author: string })[]> {
+  ): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null })[]> {
     const searchNormalized = search?.trim();
 
     const conditions = [
@@ -283,6 +283,8 @@ export class DatabaseStorage implements IStorage {
         userId: notes.userId,
         createdAt: notes.createdAt,
         author: users.username,
+        authorBranch: users.department,
+        authorYear: users.year,
       })
       .from(notes)
       .innerJoin(users, eq(notes.userId, users.id))
@@ -300,7 +302,7 @@ export class DatabaseStorage implements IStorage {
     scope: CohortScope,
     date: string,
     search?: string,
-  ): Promise<(Note & { author: string })[]> {
+  ): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null })[]> {
     const searchNormalized = search?.trim();
 
     const conditions = [
@@ -331,6 +333,8 @@ export class DatabaseStorage implements IStorage {
         userId: notes.userId,
         createdAt: notes.createdAt,
         author: users.username,
+        authorBranch: users.department,
+        authorYear: users.year,
       })
       .from(notes)
       .innerJoin(users, eq(notes.userId, users.id))
@@ -343,7 +347,7 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getAllNotes(search?: string): Promise<(Note & { author: string })[]> {
+  async getAllNotes(search?: string): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null })[]> {
     const searchNormalized = search?.trim();
 
     const searchCondition = searchNormalized
@@ -367,6 +371,8 @@ export class DatabaseStorage implements IStorage {
         userId: notes.userId,
         createdAt: notes.createdAt,
         author: users.username,
+        authorBranch: users.department,
+        authorYear: users.year,
       })
       .from(notes)
       .leftJoin(users, eq(notes.userId, users.id));
@@ -384,7 +390,7 @@ export class DatabaseStorage implements IStorage {
   async getNote(
     id: number,
     scope: CohortScope,
-  ): Promise<(Note & { author: string }) | undefined> {
+  ): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null }) | undefined> {
     const [note] = await this.db
       .select({
         id: notes.id,
@@ -397,6 +403,8 @@ export class DatabaseStorage implements IStorage {
         userId: notes.userId,
         createdAt: notes.createdAt,
         author: users.username,
+        authorBranch: users.department,
+        authorYear: users.year,
       })
       .from(notes)
       .innerJoin(users, eq(notes.userId, users.id))
@@ -416,7 +424,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getNoteAny(id: number): Promise<(Note & { author: string }) | undefined> {
+  async getNoteAny(id: number): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null }) | undefined> {
     const [note] = await this.db
       .select({
         id: notes.id,
@@ -429,6 +437,8 @@ export class DatabaseStorage implements IStorage {
         userId: notes.userId,
         createdAt: notes.createdAt,
         author: users.username,
+        authorBranch: users.department,
+        authorYear: users.year,
       })
       .from(notes)
       .leftJoin(users, eq(notes.userId, users.id))
@@ -442,7 +452,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getMyUploads(userId: number): Promise<(Note & { author: string })[]> {
+  async getMyUploads(userId: number): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null })[]> {
     const results = await this.db
       .select({
         id: notes.id,
@@ -455,6 +465,8 @@ export class DatabaseStorage implements IStorage {
         userId: notes.userId,
         createdAt: notes.createdAt,
         author: users.username,
+        authorBranch: users.department,
+        authorYear: users.year,
       })
       .from(notes)
       .leftJoin(users, eq(notes.userId, users.id))
@@ -482,6 +494,8 @@ export class DatabaseStorage implements IStorage {
         userId: notes.userId,
         createdAt: notes.createdAt,
         author: users.username,
+        authorBranch: users.department,
+        authorYear: users.year,
         downloadedAt: downloads.createdAt,
       })
       .from(downloads)
@@ -623,7 +637,7 @@ export class MemoryStorage implements IStorage {
   async getNotes(
     scope: CohortScope,
     search?: string,
-  ): Promise<(Note & { author: string })[]> {
+  ): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null })[]> {
     const searchNormalized = search?.trim().toLowerCase();
 
     const filteredByCohort = this.notes.filter((note) => {
@@ -656,12 +670,14 @@ export class MemoryStorage implements IStorage {
       .map((note) => ({
         ...note,
         author: this.users.find((u) => u.id === note.userId)?.username || "Unknown",
+        authorBranch: this.users.find((u) => u.id === note.userId)?.department || null,
+        authorYear: this.users.find((u) => u.id === note.userId)?.year || null,
       }));
 
     return results;
   }
 
-  async getAllNotes(search?: string): Promise<(Note & { author: string })[]> {
+  async getAllNotes(search?: string): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null })[]> {
     const searchNormalized = search?.trim().toLowerCase();
 
     const filtered = searchNormalized
@@ -689,6 +705,8 @@ export class MemoryStorage implements IStorage {
       .map((note) => ({
         ...note,
         author: this.users.find((u) => u.id === note.userId)?.username || "Unknown",
+        authorBranch: this.users.find((u) => u.id === note.userId)?.department || null,
+        authorYear: this.users.find((u) => u.id === note.userId)?.year || null,
       }));
   }
 
@@ -696,7 +714,7 @@ export class MemoryStorage implements IStorage {
     scope: CohortScope,
     date: string,
     search?: string,
-  ): Promise<(Note & { author: string })[]> {
+  ): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null })[]> {
     const filtered = await this.getNotes(scope, search);
     return filtered.filter((note) => {
       const createdAt = note.createdAt ? new Date(note.createdAt) : new Date(0);
@@ -710,7 +728,7 @@ export class MemoryStorage implements IStorage {
   async getNote(
     id: number,
     scope: CohortScope,
-  ): Promise<(Note & { author: string }) | undefined> {
+  ): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null }) | undefined> {
     const note = this.notes.find((n) => n.id === id);
     if (!note) return undefined;
     const authorUser = this.users.find((u) => u.id === note.userId);
@@ -723,20 +741,27 @@ export class MemoryStorage implements IStorage {
     return {
       ...note,
       author: this.users.find((u) => u.id === note.userId)?.username || "Unknown",
+        authorBranch: this.users.find((u) => u.id === note.userId)?.department || null,
+        authorYear: this.users.find((u) => u.id === note.userId)?.year || null,
     };
   }
 
-  async getNoteAny(id: number): Promise<(Note & { author: string }) | undefined> {
+  async getNoteAny(id: number): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null }) | undefined> {
     const note = this.notes.find((n) => n.id === id);
     if (!note) return undefined;
     return {
       ...note,
       author: this.users.find((u) => u.id === note.userId)?.username || "Unknown",
+        authorBranch: this.users.find((u) => u.id === note.userId)?.department || null,
+        authorYear: this.users.find((u) => u.id === note.userId)?.year || null,
     };
   }
 
-  async getMyUploads(userId: number): Promise<(Note & { author: string })[]> {
-    const author = this.users.find((u) => u.id === userId)?.username || "Unknown";
+  async getMyUploads(userId: number): Promise<(Note & { author: string; authorBranch: string | null; authorYear: number | null })[]> {
+    const authorUser = this.users.find((u) => u.id === userId);
+    const author = authorUser?.username || "Unknown";
+    const authorBranch = authorUser?.department || null;
+    const authorYear = authorUser?.year || null;
     return this.notes
       .filter((n) => n.userId === userId)
       .slice()
@@ -744,7 +769,7 @@ export class MemoryStorage implements IStorage {
         (a, b) =>
           (b.createdAt?.getTime?.() ?? 0) - (a.createdAt?.getTime?.() ?? 0),
       )
-      .map((note) => ({ ...note, author }));
+      .map((note) => ({ ...note, author, authorBranch, authorYear }));
   }
 
   async getMyDownloads(
@@ -762,6 +787,8 @@ export class MemoryStorage implements IStorage {
         return {
           ...note,
           author: this.users.find((u) => u.id === note.userId)?.username || "Unknown",
+        authorBranch: this.users.find((u) => u.id === note.userId)?.department || null,
+        authorYear: this.users.find((u) => u.id === note.userId)?.year || null,
           downloadedAt: d.createdAt,
         };
       })

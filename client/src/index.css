@@ -65,6 +65,59 @@
   --font-serif: var(--font-display);
 }
 
+.dark {
+  --background: 224 30% 9%;
+  --foreground: 222 35% 95%;
+
+  --card: 224 30% 12%;
+  --card-foreground: 222 35% 95%;
+  --popover: 224 30% 12%;
+  --popover-foreground: 222 35% 95%;
+
+  --primary: 221 78% 62%;
+  --primary-foreground: 210 40% 14%;
+
+  --secondary: 250 35% 18%;
+  --secondary-foreground: 222 35% 95%;
+
+  --muted: 222 22% 18%;
+  --muted-foreground: 215 16% 65%;
+
+  --accent: 32 70% 18%;
+  --accent-foreground: 222 35% 95%;
+
+  --destructive: 0 73% 48%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 224 18% 25%;
+  --input: 224 18% 25%;
+  --ring: 221 78% 62%;
+}
+
+.theme-rose {
+  --primary: 346 87% 60%;
+  --primary-foreground: 355 100% 97%;
+  --ring: 346 87% 60%;
+}
+
+.theme-green {
+  --primary: 142 71% 45%;
+  --primary-foreground: 144 100% 97%;
+  --ring: 142 71% 45%;
+}
+
+.theme-blue {
+  --primary: 221 78% 52%;
+  --primary-foreground: 210 40% 98%;
+  --ring: 221 78% 52%;
+}
+
+.theme-orange {
+  --primary: 24 98% 50%;
+  --primary-foreground: 24 100% 97%;
+  --ring: 24 98% 50%;
+}
+
 @layer base {
   body {
     @apply bg-background text-foreground antialiased font-body;

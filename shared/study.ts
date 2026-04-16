@@ -88,6 +88,9 @@ export const studyRoomSchema = z.object({
   messages: z.array(studyMessageSchema),
   history: z.array(studyHistoryEntrySchema),
   session: studySessionSchema,
+  allowScreenShare: z.boolean().default(true),
+  expiresAt: z.string().nullable(),
+  isArchived: z.boolean().default(false),
 });
 
 export const createStudyRoomSchema = z.object({
@@ -97,6 +100,9 @@ export const createStudyRoomSchema = z.object({
   capacity: z.coerce.number().int().min(2).max(20).default(8),
   isPrivate: z.boolean().default(false),
   inviteIdentifiers: z.array(z.string().trim().min(1).max(254)).max(10).default([]),
+  durationHours: z.coerce.number().int().min(0).max(24).optional(),
+  durationMinutes: z.coerce.number().int().min(0).max(59).optional(),
+  endAt: z.string().optional(),
 });
 
 export const joinStudyRoomSchema = z.object({
@@ -141,6 +147,25 @@ export const signalPeerSchema = z.object({
   data: z.unknown(),
 });
 
+export const kickStudyParticipantSchema = z.object({
+  roomId: z.string().trim().min(1),
+  targetSocketId: z.string().trim().min(1),
+});
+
+export const muteStudyParticipantSchema = z.object({
+  roomId: z.string().trim().min(1),
+  targetSocketId: z.string().trim().min(1),
+});
+
+export const updateRoomSettingsSchema = z.object({
+  roomId: z.string().trim().min(1),
+  allowScreenShare: z.boolean(),
+});
+
+export const deleteStudyRoomSchema = z.object({
+  roomId: z.string().trim().min(1),
+});
+
 export type StudyActor = z.infer<typeof studyActorSchema>;
 export type StudyMessage = z.infer<typeof studyMessageSchema>;
 export type StudyHistoryType = z.infer<typeof studyHistoryTypeSchema>;
@@ -159,3 +184,7 @@ export type SendStudyMessageInput = z.infer<typeof sendStudyMessageSchema>;
 export type UpdateStudySessionInput = z.infer<typeof updateStudySessionSchema>;
 export type UpdateMediaStateInput = z.infer<typeof updateMediaStateSchema>;
 export type SignalPeerInput = z.infer<typeof signalPeerSchema>;
+export type KickStudyParticipantInput = z.infer<typeof kickStudyParticipantSchema>;
+export type MuteStudyParticipantInput = z.infer<typeof muteStudyParticipantSchema>;
+export type UpdateRoomSettingsInput = z.infer<typeof updateRoomSettingsSchema>;
+export type DeleteStudyRoomInput = z.infer<typeof deleteStudyRoomSchema>;

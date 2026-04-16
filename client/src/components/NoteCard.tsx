@@ -8,7 +8,7 @@ import { useRecordDownload } from "@/hooks/use-notes";
 import { resolveUploadedFileUrl } from "@/lib/backend";
 
 interface NoteCardProps {
-  note: Note & { author: string };
+  note: Note & { author: string; authorBranch?: string | null; authorYear?: number | null };
 }
 
 export function NoteCard({ note }: NoteCardProps) {
@@ -46,7 +46,7 @@ export function NoteCard({ note }: NoteCardProps) {
         <div className="flex flex-col gap-2 text-xs text-muted-foreground/80 mt-auto">
           <div className="flex items-center gap-2">
             <User className="h-3.5 w-3.5" />
-            <span>Shared by {note.author}</span>
+            <span>Shared by {note.author} {note.authorBranch ? `(${note.authorBranch}${note.authorYear ? ` - Yr ${note.authorYear}` : ""})` : ""}</span>
           </div>
           <div className="flex items-center gap-2">
             <Calendar className="h-3.5 w-3.5" />

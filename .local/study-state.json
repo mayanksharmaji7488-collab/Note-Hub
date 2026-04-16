@@ -2,6 +2,90 @@
   "version": 1,
   "rooms": [
     {
+      "id": "rig-2fdad1",
+      "name": "rig",
+      "topic": "study",
+      "description": "good",
+      "capacity": 8,
+      "isPrivate": true,
+      "inviteCode": "E6E20240",
+      "createdAt": "2026-04-16T06:05:21.206Z",
+      "createdBy": {
+        "userId": 2,
+        "name": "text"
+      },
+      "participants": [],
+      "messages": [
+        {
+          "id": "820fdf26-a39f-42fd-bddf-ec3f14a5e328",
+          "roomId": "rig-2fdad1",
+          "text": "hey",
+          "createdAt": "2026-04-16T06:16:51.997Z",
+          "user": {
+            "id": 2,
+            "name": "text",
+            "role": "student"
+          }
+        }
+      ],
+      "history": [
+        {
+          "id": "1bd34537-a4a1-4582-a4f0-aae7e5361437",
+          "roomId": "rig-2fdad1",
+          "type": "room_created",
+          "createdAt": "2026-04-16T06:05:21.206Z",
+          "actor": {
+            "userId": 2,
+            "name": "text"
+          },
+          "text": "text created the room."
+        },
+        {
+          "id": "3385a1f7-13f4-4171-91c4-b3cd21bc5503",
+          "roomId": "rig-2fdad1",
+          "type": "screen_share_started",
+          "createdAt": "2026-04-16T06:56:39.893Z",
+          "actor": {
+            "userId": 2,
+            "name": "text"
+          },
+          "text": "text started screen sharing."
+        },
+        {
+          "id": "3319c678-e99a-4d22-9345-751c1d86a0ea",
+          "roomId": "rig-2fdad1",
+          "type": "screen_share_stopped",
+          "createdAt": "2026-04-16T06:56:50.803Z",
+          "actor": {
+            "userId": 2,
+            "name": "text"
+          },
+          "text": "text stopped screen sharing."
+        },
+        {
+          "id": "c5682e83-0ee5-4a62-9027-c340f18a2885",
+          "roomId": "rig-2fdad1",
+          "type": "screen_share_started",
+          "createdAt": "2026-04-16T06:59:32.471Z",
+          "actor": {
+            "userId": 2,
+            "name": "text"
+          },
+          "text": "text started screen sharing."
+        }
+      ],
+      "session": {
+        "goal": "Start a shared session for study",
+        "durationMinutes": 45,
+        "startedAt": null,
+        "endsAt": null,
+        "status": "idle",
+        "startedBy": null
+      },
+      "memberUserIds": [],
+      "updatedAt": "2026-04-16T06:59:32.471Z"
+    },
+    {
       "id": "room-a6dccc",
       "name": "room",
       "topic": "112",
@@ -388,7 +472,30 @@
         "name": "NoteShare"
       },
       "participants": [],
-      "messages": [],
+      "messages": [
+        {
+          "id": "6e7d07c0-3c05-4af8-8673-6c376273f2b6",
+          "roomId": "daily-focus-lab",
+          "text": "hey guys",
+          "createdAt": "2026-04-16T07:03:56.442Z",
+          "user": {
+            "id": 2,
+            "name": "text",
+            "role": "student"
+          }
+        },
+        {
+          "id": "59cb6da8-35dd-4021-8a65-87463c8ed5e3",
+          "roomId": "daily-focus-lab",
+          "text": "great",
+          "createdAt": "2026-04-16T07:04:05.534Z",
+          "user": {
+            "id": 3,
+            "name": "rahul",
+            "role": "student"
+          }
+        }
+      ],
       "history": [
         {
           "id": "4f7c0185-b876-435c-a2ff-df736d2afe0d",
@@ -400,6 +507,105 @@
             "name": "NoteShare"
           },
           "text": "NoteShare created the room."
+        },
+        {
+          "id": "e69c155a-f6ab-41d0-839d-16d146f5b33b",
+          "roomId": "daily-focus-lab",
+          "type": "screen_share_started",
+          "createdAt": "2026-04-16T07:01:28.205Z",
+          "actor": {
+            "userId": 3,
+            "name": "rahul"
+          },
+          "text": "rahul started screen sharing."
+        },
+        {
+          "id": "811bc80b-98ce-4e75-ba9f-f8c73a9460b5",
+          "roomId": "daily-focus-lab",
+          "type": "screen_share_stopped",
+          "createdAt": "2026-04-16T07:03:43.945Z",
+          "actor": {
+            "userId": 3,
+            "name": "rahul"
+          },
+          "text": "rahul stopped screen sharing."
+        },
+        {
+          "id": "6f23b26b-9608-4d77-a9be-527878adc3e8",
+          "roomId": "daily-focus-lab",
+          "type": "screen_share_started",
+          "createdAt": "2026-04-16T07:13:49.202Z",
+          "actor": {
+            "userId": 3,
+            "name": "rahul"
+          },
+          "text": "rahul started screen sharing."
+        },
+        {
+          "id": "d86b057d-4442-44d4-a581-4529482131af",
+          "roomId": "daily-focus-lab",
+          "type": "screen_share_started",
+          "createdAt": "2026-04-16T07:41:36.364Z",
+          "actor": {
+            "userId": 2,
+            "name": "text"
+          },
+          "text": "text started screen sharing."
+        },
+        {
+          "id": "72496d5e-6837-4032-bbdb-ae8b18df3286",
+          "roomId": "daily-focus-lab",
+          "type": "screen_share_stopped",
+          "createdAt": "2026-04-16T07:41:56.894Z",
+          "actor": {
+            "userId": 2,
+            "name": "text"
+          },
+          "text": "text stopped screen sharing."
+        },
+        {
+          "id": "bc11e55f-87d4-42e8-8d93-3a4a200903f5",
+          "roomId": "daily-focus-lab",
+          "type": "screen_share_started",
+          "createdAt": "2026-04-16T09:31:53.477Z",
+          "actor": {
+            "userId": 2,
+            "name": "text"
+          },
+          "text": "text started screen sharing."
+        },
+        {
+          "id": "16844099-83af-445c-81e0-1a58168350df",
+          "roomId": "daily-focus-lab",
+          "type": "screen_share_stopped",
+          "createdAt": "2026-04-16T09:33:33.431Z",
+          "actor": {
+            "userId": 2,
+            "name": "text"
+          },
+          "text": "text stopped screen sharing."
+        },
+        {
+          "id": "41f2619a-0cee-4918-8e6b-2b63ade06d87",
+          "roomId": "daily-focus-lab",
+          "type": "screen_share_started",
+          "createdAt": "2026-04-16T09:33:51.593Z",
+          "actor": {
+            "userId": 2,
+            "name": "text"
+          },
+          "text": "text started screen sharing."
+        },
+        {
+          "id": "4d285d12-9ffb-4008-8f7b-3c4fa1a05e35",
+          "roomId": "daily-focus-lab",
+          "type": "screen_share_stopped",
+          "createdAt": "2026-04-16T09:35:34.363Z",
+          "actor": {
+            "userId": 2,
+            "name": "text"
+          },
+          "text": "text stopped screen sharing."
         }
       ],
       "session": {
@@ -411,7 +617,7 @@
         "startedBy": null
       },
       "memberUserIds": [],
-      "updatedAt": "2026-03-31T06:37:10.454Z"
+      "updatedAt": "2026-04-16T09:35:34.363Z"
     },
     {
       "id": "exam-cram-circle",

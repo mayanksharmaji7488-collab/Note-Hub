@@ -23,6 +23,8 @@ import {
 
 export default function Dashboard() {
   const [search, setSearch] = useState("");
+  const DEFAULT_BRANCHES = ["CSBS", "CST", "CSD", "CSE"];
+  const [branches, setBranches] = useState<string[]>(DEFAULT_BRANCHES);
   const { user, updateProfile, isUpdatingProfile } = useAuth();
   const [, setLocation] = useLocation();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -37,6 +39,9 @@ export default function Dashboard() {
   const profileReady = !!user.department && !!user.year;
 
   useEffect(() => {
+    if (user.department && !branches.includes(user.department)) {
+      setBranches(prev => [...prev, user.department!]);
+    }
     setProfileDepartment(user.department ?? "");
     setProfileYear(user.year ?? 1);
   }, [user.department, user.year]);
@@ -101,19 +106,41 @@ export default function Dashboard() {
           <CardHeader className="pb-4">
             <CardTitle className="text-2xl font-display">Complete your profile</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Add your department and year to see notes shared by your classmates.
+              Add your branch and year to see notes shared by your classmates.
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <span className="text-sm font-medium">Department</span>
-                <Input
-                  value={profileDepartment}
-                  onChange={(e) => setProfileDepartment(e.target.value)}
-                  placeholder="CSE, ECE, ME..."
-                  className="h-11"
-                />
+                <span className="text-sm font-medium">Branch</span>
+                <div className="flex gap-2">
+                  <Select value={profileDepartment} onValueChange={setProfileDepartment}>
+                    <SelectTrigger className="h-11 flex-1">
+                      <SelectValue placeholder="Select branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {branches.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 shrink-0"
+                    onClick={() => {
+                      const newBranch = window.prompt("Enter new branch name:");
+                      if (newBranch && newBranch.trim()) {
+                        const trimmed = newBranch.trim().toUpperCase();
+                        if (!branches.includes(trimmed)) {
+                          setBranches(prev => [...prev, trimmed]);
+                        }
+                        setProfileDepartment(trimmed);
+                      }
+                    }}
+                    title="Add Branch"
+                  >
+                    <Plus className="h-4 w-4 border-foreground" />
+                  </Button>
+                </div>
               </div>
               <div className="space-y-2">
                 <span className="text-sm font-medium">Year</span>
@@ -161,7 +188,7 @@ export default function Dashboard() {
               <div>
                 <CardTitle className="text-2xl font-display">Browse by date</CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Click a date to see notes uploaded that day (your department + year only).
+                  Click a date to see notes uploaded that day (your branch + year only).
                 </p>
               </div>
               {selectedDate ? (
@@ -191,8 +218,6 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* My Library (also available in sidebar) */}
-      <MyLibraryCard maxItems={6} />
 
       {/* Content Grid */}
       {!profileReady ? null : isLoading ? (
