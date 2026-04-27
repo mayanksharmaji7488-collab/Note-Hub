@@ -178,6 +178,7 @@ export function useAuth() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData([api.auth.me.path], data);
+      queryClient.invalidateQueries({ queryKey: [api.departments.list.path] });
       toast({ title: "Profile updated", description: "Your department and year were saved." });
     },
     onError: (error: Error) => {

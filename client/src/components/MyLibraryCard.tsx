@@ -104,6 +104,9 @@ export function MyLibraryCard({ maxItems }: { maxItems?: number }) {
                             {n.subject}
                           </Badge>
                           <Badge variant="outline" className="text-muted-foreground">
+                            {n.department}
+                          </Badge>
+                          <Badge variant="outline" className="text-muted-foreground">
                             {n.semester}
                           </Badge>
                         </div>
@@ -184,6 +187,9 @@ export function MyLibraryCard({ maxItems }: { maxItems?: number }) {
                           <span className="font-medium truncate">{n.title}</span>
                           <Badge variant="secondary" className="bg-primary/6 text-primary">
                             {n.subject}
+                          </Badge>
+                          <Badge variant="outline" className="text-muted-foreground">
+                            {n.department}
                           </Badge>
                           <Badge variant="outline" className="text-muted-foreground">
                             {n.semester}

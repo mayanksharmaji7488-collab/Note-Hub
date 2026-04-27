@@ -24,9 +24,14 @@ export function NoteCard({ note }: NoteCardProps) {
     <Card className="group glass-card hover:shadow-lg transition-all duration-300 border-border/60 overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start gap-4">
-          <Badge variant="secondary" className="bg-primary/5 text-primary hover:bg-primary/10 transition-colors">
-            {note.subject}
-          </Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary" className="bg-primary/5 text-primary hover:bg-primary/10 transition-colors">
+              {note.subject}
+            </Badge>
+            <Badge variant="outline" className="text-muted-foreground">
+              {note.department}
+            </Badge>
+          </div>
           <Badge variant="outline" className="text-muted-foreground">
             {note.semester}
           </Badge>

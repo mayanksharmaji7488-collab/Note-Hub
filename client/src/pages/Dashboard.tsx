@@ -1,4 +1,5 @@
 import { useNotes, useNotesByDate } from "@/hooks/use-notes";
+import { useDepartments } from "@/hooks/use-departments";
 import { useAuth } from "@/hooks/use-auth";
 import { Layout } from "@/components/Layout";
 import { NoteCard } from "@/components/NoteCard";
@@ -27,28 +28,30 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [profileDepartment, setProfileDepartment] = useState("");
+  const [newDepartmentName, setNewDepartmentName] = useState("");
   const [profileYear, setProfileYear] = useState<number>(1);
+  const { departments, total: departmentCount } = useDepartments({ enabled: !!user });
+  const profileReady = !!user?.department && !!user?.year;
+
+  useEffect(() => {
+    setProfileDepartment(user?.department ?? "");
+    setNewDepartmentName("");
+    setProfileYear(user?.year ?? 1);
+  }, [user?.department, user?.year]);
+
+  const allNotesQuery = useNotes(search, {
+    enabled: !!user && profileReady && !selectedDate,
+  });
+  const dateNotesQuery = useNotesByDate(selectedDate, search, {
+    enabled: !!user && profileReady && !!selectedDate,
+  });
+  const notesQuery = selectedDate ? dateNotesQuery : allNotesQuery;
+  const { data: notes, isLoading, error } = notesQuery;
 
   if (!user) {
     setLocation("/auth");
     return null;
   }
-
-  const profileReady = !!user.department && !!user.year;
-
-  useEffect(() => {
-    setProfileDepartment(user.department ?? "");
-    setProfileYear(user.year ?? 1);
-  }, [user.department, user.year]);
-
-  const allNotesQuery = useNotes(search, {
-    enabled: profileReady && !selectedDate,
-  });
-  const dateNotesQuery = useNotesByDate(selectedDate, search, {
-    enabled: profileReady && !!selectedDate,
-  });
-  const notesQuery = selectedDate ? dateNotesQuery : allNotesQuery;
-  const { data: notes, isLoading, error } = notesQuery;
 
   return (
       <Layout>
@@ -90,7 +93,7 @@ export default function Dashboard() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
         <Input 
           className="pl-12 h-14 text-lg bg-card/70 backdrop-blur border-border/60 hover:border-primary/35 focus-visible:ring-primary/20 transition-all rounded-2xl"
-          placeholder="Search by title, subject, or author..."
+          placeholder="Search by title, subject, department, or author..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -107,13 +110,33 @@ export default function Dashboard() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <span className="text-sm font-medium">Department</span>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium">Department</span>
+                  <span className="text-xs text-muted-foreground">
+                    {departmentCount} department{departmentCount === 1 ? "" : "s"} available
+                  </span>
+                </div>
+                <Select value={profileDepartment} onValueChange={setProfileDepartment}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((department) => (
+                      <SelectItem key={department.id} value={department.name}>
+                        {department.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Input
-                  value={profileDepartment}
-                  onChange={(e) => setProfileDepartment(e.target.value)}
-                  placeholder="CSE, ECE, ME..."
+                  value={newDepartmentName}
+                  onChange={(e) => setNewDepartmentName(e.target.value)}
+                  placeholder="Create a new department if it is missing"
                   className="h-11"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Choose an existing department or type a new one to create it.
+                </p>
               </div>
               <div className="space-y-2">
                 <span className="text-sm font-medium">Year</span>
@@ -140,10 +163,12 @@ export default function Dashboard() {
                 disabled={isUpdatingProfile}
                 onClick={async () => {
                   try {
+                    const department = newDepartmentName.trim() || profileDepartment;
                     await updateProfile({
-                      department: profileDepartment,
+                      department,
                       year: profileYear,
                     });
+                    setNewDepartmentName("");
                   } catch {
                     // toast handled in hook
                   }

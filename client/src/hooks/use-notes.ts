@@ -1,8 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
+import type { UserRole } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { resolveApiUrl } from "@/lib/backend";
+
+export type AllNotesFilters = {
+  uploadedBy?: UserRole;
+  department?: string;
+  semester?: string;
+};
+
+function appendAllNotesFilters(
+  params: URLSearchParams,
+  search?: string,
+  filters?: AllNotesFilters,
+) {
+  const searchValue = search?.trim();
+  if (searchValue) params.set("search", searchValue);
+  if (filters?.uploadedBy) params.set("uploadedBy", filters.uploadedBy);
+  if (filters?.department) params.set("department", filters.department);
+  if (filters?.semester) params.set("semester", filters.semester);
+}
 
 export function useNotes(search?: string, opts?: { enabled?: boolean }) {
   return useQuery({
@@ -19,19 +38,30 @@ export function useNotes(search?: string, opts?: { enabled?: boolean }) {
           typeof body?.message === "string" ? body.message : "Failed to fetch notes";
         throw new Error(message);
       }
-      return api.notes.list.responses[200].parse(await res.json());
+      return api.notes.all.responses[200].parse(await res.json());
     },
     enabled: opts?.enabled,
   });
 }
 
-export function useAllNotes(search?: string, opts?: { enabled?: boolean }) {
+export function useAllNotes(
+  search?: string,
+  filters?: AllNotesFilters,
+  opts?: { enabled?: boolean },
+) {
   return useQuery({
-    queryKey: [api.notes.list.path, "all", search],
+    queryKey: [
+      api.notes.all.path,
+      search ?? "",
+      filters?.uploadedBy ?? null,
+      filters?.department ?? null,
+      filters?.semester ?? null,
+    ],
     queryFn: async () => {
-      const params = new URLSearchParams({ all: "1" });
-      if (search) params.set("search", search);
-      const url = `${api.notes.list.path}?${params.toString()}`;
+      const params = new URLSearchParams();
+      appendAllNotesFilters(params, search, filters);
+      const query = params.toString();
+      const url = query ? `${api.notes.all.path}?${query}` : api.notes.all.path;
 
       const res = await fetch(resolveApiUrl(url), { credentials: "include" });
       if (!res.ok) {
@@ -111,7 +141,7 @@ export function useCreateNote() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.notes.list.path] });
-      queryClient.invalidateQueries({ queryKey: [api.notes.list.path, "all"] });
+      queryClient.invalidateQueries({ queryKey: [api.notes.all.path] });
       queryClient.invalidateQueries({ queryKey: [api.me.uploads.path] });
       toast({ title: "Success!", description: "Note uploaded successfully." });
     },
@@ -149,6 +179,7 @@ export function useDeleteNote() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.notes.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.notes.all.path] });
       queryClient.invalidateQueries({ queryKey: [api.notes.byDate.path] });
       queryClient.invalidateQueries({ queryKey: [api.notes.get.path] });
       queryClient.invalidateQueries({ queryKey: [api.me.uploads.path] });

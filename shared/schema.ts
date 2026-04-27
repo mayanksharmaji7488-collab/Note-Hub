@@ -33,10 +33,18 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const departments = pgTable("departments", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const notes = pgTable("notes", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   subject: text("subject").notNull(),
+  department: text("department").notNull(),
   semester: text("semester").notNull(),
   description: text("description"),
   fileUrl: text("file_url").notNull(),
@@ -252,6 +260,7 @@ export const changePasswordSchema = z.object({
 });
 
 export type User = typeof users.$inferSelect;
+export type Department = typeof departments.$inferSelect;
 export type Note = typeof notes.$inferSelect;
 export type Download = typeof downloads.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;

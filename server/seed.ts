@@ -22,6 +22,7 @@ export async function seed(storage: IStorage) {
     await storage.createNote({
       title: "Introduction to Calculus",
       subject: "Mathematics",
+      department: "CSE",
       semester: "Sem 1",
       description: "Basic limits and derivatives notes.",
       fileName: "calculus_intro.pdf",
@@ -32,6 +33,7 @@ export async function seed(storage: IStorage) {
     await storage.createNote({
       title: "Data Structures",
       subject: "Computer Science",
+      department: "CSE",
       semester: "Sem 3",
       description: "Linked lists, stacks, and queues.",
       fileName: "ds_notes.pdf",

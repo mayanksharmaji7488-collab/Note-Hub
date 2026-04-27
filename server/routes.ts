@@ -85,12 +85,21 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
+function normalizeDepartmentValue(value: string) {
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (!normalized) return "";
+
+  return normalized.length <= 8 && !/\s/.test(normalized)
+    ? normalized.toUpperCase()
+    : normalized;
+}
+
 function getCohortScope(req: any): { department: string; year: number } | null {
   const departmentRaw = req?.user?.department;
   const yearRaw = req?.user?.year;
 
   const department =
-    typeof departmentRaw === "string" ? departmentRaw.trim() : undefined;
+    typeof departmentRaw === "string" ? normalizeDepartmentValue(departmentRaw) : undefined;
   const year = typeof yearRaw === "number" ? yearRaw : Number(yearRaw);
 
   if (!department) return null;
@@ -101,6 +110,39 @@ function getCohortScope(req: any): { department: string; year: number } | null {
 
 function normalizePhone(raw: string): string {
   return raw.trim().replace(/[()\s.-]/g, "");
+}
+
+function getQueryValue(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+  return undefined;
+}
+
+function optionalQueryString(value: unknown): string | undefined {
+  const raw = getQueryValue(value);
+  if (raw === undefined) return undefined;
+
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+const allNotesFilterQuerySchema = z.object({
+  search: z.preprocess(optionalQueryString, z.string().max(200).optional()),
+  uploadedBy: z.preprocess(optionalQueryString, z.enum(["faculty", "student"]).optional()),
+  department: z.preprocess(optionalQueryString, z.string().max(64).optional()),
+  semester: z.preprocess(
+    optionalQueryString,
+    z.enum(["1", "2", "3", "4", "5", "6", "7", "8"]).optional(),
+  ),
+});
+
+function parseAllNotesFilters(query: Record<string, unknown>) {
+  return allNotesFilterQuerySchema.safeParse({
+    search: query.search,
+    uploadedBy: query.uploadedBy,
+    department: query.department,
+    semester: query.semester,
+  });
 }
 
 function sanitizeUserSummary(user: any) {
@@ -141,6 +183,16 @@ export async function registerRoutes(
 
   // --- API Routes ---
 
+  app.get(api.departments.list.path, async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const items = await storage.listDepartments();
+    return res.status(200).json({
+      total: items.length,
+      items,
+    });
+  });
+
   app.patch(api.auth.updateProfile.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -151,7 +203,7 @@ export async function registerRoutes(
         .json({ message: parsed.error.issues[0]?.message ?? "Invalid input" });
     }
 
-    const department = parsed.data.department.trim();
+    const department = normalizeDepartmentValue(parsed.data.department);
     const year = parsed.data.year;
 
     const user = await storage.updateUserProfile(req.user.id, { department, year });
@@ -450,7 +502,14 @@ export async function registerRoutes(
     const search = searchRaw && searchRaw.length > 200 ? searchRaw.slice(0, 200) : searchRaw;
 
     if (all) {
-      const notes = await storage.getAllNotes(search);
+      const parsed = parseAllNotesFilters(req.query as Record<string, unknown>);
+      if (!parsed.success) {
+        return res
+          .status(400)
+          .json({ message: parsed.error.issues[0]?.message ?? "Invalid filters" });
+      }
+
+      const notes = await storage.getAllNotes(parsed.data);
       return res.json(notes);
     }
 
@@ -461,9 +520,14 @@ export async function registerRoutes(
   app.get(api.notes.all.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send();
 
-    const searchRaw = req.query.search as string | undefined;
-    const search = searchRaw && searchRaw.length > 200 ? searchRaw.slice(0, 200) : searchRaw;
-    const notes = await storage.getAllNotes(search);
+    const parsed = parseAllNotesFilters(req.query as Record<string, unknown>);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ message: parsed.error.issues[0]?.message ?? "Invalid filters" });
+    }
+
+    const notes = await storage.getAllNotes(parsed.data);
     return res.json(notes);
   });
 
@@ -528,6 +592,7 @@ export async function registerRoutes(
       const bodySchema = z.object({
         title: z.string().trim().min(1).max(120),
         subject: z.string().trim().min(1).max(24),
+        department: z.string().trim().min(1).max(64).optional(),
         semester: z.string().trim().min(1).max(32),
         description: z.string().trim().max(2000).optional(),
       });
@@ -535,12 +600,23 @@ export async function registerRoutes(
       const parsed = bodySchema.parse({
         title: req.body.title,
         subject: req.body.subject,
+        department: req.body.department,
         semester: req.body.semester,
         description: req.body.description,
       });
 
+      const department =
+        typeof parsed.department === "string" && parsed.department.trim().length > 0
+          ? normalizeDepartmentValue(parsed.department)
+          : getCohortScope(req)?.department;
+
+      if (!department) {
+        return res.status(400).json({ message: "Department is required" });
+      }
+
       const input = {
         ...parsed,
+        department,
         fileName: sanitizeFilename(req.file.originalname),
         fileUrl: `/uploads/${req.file.filename}`,
       };

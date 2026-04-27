@@ -6,10 +6,12 @@ import {
   authOtpVerifySchema,
   authRegisterSchema,
   changePasswordSchema,
+  departments,
   insertNoteSchema,
   notes,
   passwordResetConfirmSchema,
   passwordResetRequestSchema,
+  userRoleSchema,
   userProfileSchema,
   userIdentityUpdateSchema,
   users,
@@ -17,6 +19,15 @@ import {
   verifyMobileSchema,
 } from './schema';
 import { studyRoomSchema } from "./study";
+
+const semesterFilterSchema = z.enum(["1", "2", "3", "4", "5", "6", "7", "8"]);
+
+const notesFilterQuerySchema = z.object({
+  search: z.string().optional(),
+  uploadedBy: userRoleSchema.optional(),
+  department: z.string().optional(),
+  semester: semesterFilterSchema.optional(),
+});
 
 export const errorSchemas = {
   validation: z.object({
@@ -38,6 +49,19 @@ export const errorSchemas = {
 };
 
 export const api = {
+  departments: {
+    list: {
+      method: "GET" as const,
+      path: "/api/departments",
+      responses: {
+        200: z.object({
+          total: z.number().int().nonnegative(),
+          items: z.array(z.custom<typeof departments.$inferSelect>()),
+        }),
+        401: errorSchemas.unauthorized,
+      },
+    },
+  },
   auth: {
     register: {
       method: 'POST' as const,
@@ -206,9 +230,7 @@ export const api = {
     list: {
       method: 'GET' as const,
       path: '/api/notes',
-      input: z.object({
-        search: z.string().optional(),
-      }).optional(),
+      input: notesFilterQuerySchema.optional(),
       responses: {
         200: z.array(z.custom<typeof notes.$inferSelect & { author: string }>()),
         400: errorSchemas.validation,
@@ -218,11 +240,7 @@ export const api = {
     all: {
       method: "GET" as const,
       path: "/api/notes/all",
-      input: z
-        .object({
-          search: z.string().optional(),
-        })
-        .optional(),
+      input: notesFilterQuerySchema.optional(),
       responses: {
         200: z.array(z.custom<typeof notes.$inferSelect & { author: string }>()),
         400: errorSchemas.validation,

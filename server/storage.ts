@@ -1,8 +1,10 @@
 
 import {
+  departments,
   downloads,
   notes,
   users,
+  type Department,
   type InsertNote,
   type InsertUser,
   type Note,
@@ -21,6 +23,50 @@ const { Pool } = pg;
 const PostgresSessionStore = connectPg(session);
 
 export type CohortScope = { department: string; year: number };
+export type AllNotesFilters = {
+  search?: string;
+  uploadedBy?: "faculty" | "student";
+  department?: string;
+  semester?: string;
+};
+const DEFAULT_DEPARTMENTS = ["CSBS", "CSD", "CSE", "CST", "Other"] as const;
+
+function normalizeDepartmentName(value: string): string {
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (!normalized) {
+    throw new Error("Department is required");
+  }
+
+  return normalized.length <= 8 && !/\s/.test(normalized)
+    ? normalized.toUpperCase()
+    : normalized;
+}
+
+function extractSemesterNumber(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+
+  const match = value.trim().match(/(?:^|[^0-9])([1-8])(?:[^0-9]|$)/);
+  return match?.[1];
+}
+
+function sortDepartments<T extends { name: string }>(items: T[]): T[] {
+  const priority = new Map(DEFAULT_DEPARTMENTS.map((name, index) => [name.toLowerCase(), index]));
+
+  return items
+    .slice()
+    .sort((a, b) => {
+      const aPriority = priority.get(a.name.toLowerCase());
+      const bPriority = priority.get(b.name.toLowerCase());
+
+      if (aPriority !== undefined || bPriority !== undefined) {
+        if (aPriority === undefined) return 1;
+        if (bPriority === undefined) return -1;
+        if (aPriority !== bPriority) return aPriority - bPriority;
+      }
+
+      return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+    });
+}
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -28,6 +74,7 @@ export interface IStorage {
   getUserByIdentifier(identifier: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByMobile(mobileNumber: string): Promise<User | undefined>;
+  listDepartments(): Promise<Department[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUserProfile(userId: number, profile: CohortScope): Promise<User>;
   updateUserIdentityProfile(userId: number, patch: Partial<InsertUser>): Promise<User>;
@@ -36,7 +83,7 @@ export interface IStorage {
   createNote(note: InsertNote & { userId: number }): Promise<Note>;
   deleteNote(noteId: number): Promise<Note | undefined>;
   getNotes(scope: CohortScope, search?: string): Promise<(Note & { author: string })[]>;
-  getAllNotes(search?: string): Promise<(Note & { author: string })[]>;
+  getAllNotes(filters?: AllNotesFilters): Promise<(Note & { author: string })[]>;
   getNotesByDate(
     scope: CohortScope,
     date: string,
@@ -63,12 +110,57 @@ export class DatabaseStorage implements IStorage {
     this.sessionStore = sessionStore;
   }
 
+  private async ensureDepartment(name: string): Promise<Department> {
+    const normalizedName = normalizeDepartmentName(name);
+    const normalizedLower = normalizedName.toLowerCase();
+
+    const [existing] = await this.db
+      .select()
+      .from(departments)
+      .where(sql`lower(${departments.name}) = ${normalizedLower}`);
+
+    if (existing) return existing;
+
+    try {
+      const [created] = await this.db
+        .insert(departments)
+        .values({
+          name: normalizedName,
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      if (created) return created;
+    } catch (error) {
+      const maybe = error as { code?: string };
+      if (maybe?.code !== "23505") {
+        throw error;
+      }
+    }
+
+    const [afterConflict] = await this.db
+      .select()
+      .from(departments)
+      .where(sql`lower(${departments.name}) = ${normalizedLower}`);
+
+    if (!afterConflict) {
+      throw new Error("Failed to create department");
+    }
+
+    return afterConflict;
+  }
+
   private static async ensureMinimumSchema(pool: pg.Pool) {
     const res = await pool.query<{ reg: string | null }>(
       `select to_regclass('public.users') as reg`,
     );
     const usersTable = res.rows?.[0]?.reg;
     if (!usersTable) return;
+
+    const notesRes = await pool.query<{ reg: string | null }>(
+      `select to_regclass('public.notes') as reg`,
+    );
+    const notesTable = notesRes.rows?.[0]?.reg;
 
     await pool.query(`alter table public.users add column if not exists department text`);
     await pool.query(`alter table public.users add column if not exists year integer`);
@@ -112,6 +204,52 @@ export class DatabaseStorage implements IStorage {
     await pool.query(
       `update public.users set is_mobile_verified = true where mobile_number is not null or phone is not null`,
     );
+
+    await pool.query(`
+      create table if not exists public.departments (
+        id serial primary key,
+        name text not null,
+        created_at timestamp default now(),
+        updated_at timestamp default now()
+      )
+    `);
+    await pool.query(
+      `create unique index if not exists departments_name_lower_uniq on public.departments (lower(name))`,
+    );
+
+    for (const name of DEFAULT_DEPARTMENTS) {
+      await pool.query(`insert into public.departments (name) values ($1) on conflict do nothing`, [
+        name,
+      ]);
+    }
+
+    await pool.query(`
+      insert into public.departments (name)
+      select distinct btrim(department)
+      from public.users
+      where department is not null and btrim(department) <> ''
+      on conflict do nothing
+    `);
+
+    if (notesTable) {
+      await pool.query(`alter table public.notes add column if not exists department text`);
+      await pool.query(`
+        update public.notes as n
+        set department = u.department
+        from public.users as u
+        where n.user_id = u.id
+          and n.department is null
+          and u.department is not null
+          and btrim(u.department) <> ''
+      `);
+      await pool.query(`
+        insert into public.departments (name)
+        select distinct btrim(department)
+        from public.notes
+        where department is not null and btrim(department) <> ''
+        on conflict do nothing
+      `);
+    }
   }
 
   static async create(): Promise<DatabaseStorage> {
@@ -189,16 +327,31 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async listDepartments(): Promise<Department[]> {
+    const rows = await this.db.select().from(departments);
+    return sortDepartments(rows);
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
+    if (insertUser.department) {
+      await this.ensureDepartment(insertUser.department);
+      insertUser = {
+        ...insertUser,
+        department: normalizeDepartmentName(insertUser.department),
+      };
+    }
+
     const [user] = await this.db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async updateUserProfile(userId: number, profile: CohortScope): Promise<User> {
+    await this.ensureDepartment(profile.department);
+
     const [user] = await this.db
       .update(users)
       .set({
-        department: profile.department,
+        department: normalizeDepartmentName(profile.department),
         year: profile.year,
         updatedAt: new Date(),
       })
@@ -234,7 +387,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createNote(note: InsertNote & { userId: number }): Promise<Note> {
-    const [newNote] = await this.db.insert(notes).values(note).returning();
+    await this.ensureDepartment(note.department);
+
+    const [newNote] = await this.db
+      .insert(notes)
+      .values({
+        ...note,
+        department: normalizeDepartmentName(note.department),
+      })
+      .returning();
     return newNote;
   }
 
@@ -255,9 +416,10 @@ export class DatabaseStorage implements IStorage {
     search?: string,
   ): Promise<(Note & { author: string })[]> {
     const searchNormalized = search?.trim();
+    const scopedDepartment = normalizeDepartmentName(scope.department);
 
     const conditions = [
-      eq(users.department, scope.department),
+      eq(notes.department, scopedDepartment),
       eq(users.year, scope.year),
     ];
 
@@ -265,6 +427,7 @@ export class DatabaseStorage implements IStorage {
       const searchCondition = or(
         ilike(notes.title, `%${searchNormalized}%`),
         ilike(notes.subject, `%${searchNormalized}%`),
+        ilike(notes.department, `%${searchNormalized}%`),
         ilike(notes.description, `%${searchNormalized}%`),
         ilike(users.username, `%${searchNormalized}%`),
       );
@@ -276,6 +439,7 @@ export class DatabaseStorage implements IStorage {
         id: notes.id,
         title: notes.title,
         subject: notes.subject,
+        department: notes.department,
         semester: notes.semester,
         description: notes.description,
         fileUrl: notes.fileUrl,
@@ -302,9 +466,10 @@ export class DatabaseStorage implements IStorage {
     search?: string,
   ): Promise<(Note & { author: string })[]> {
     const searchNormalized = search?.trim();
+    const scopedDepartment = normalizeDepartmentName(scope.department);
 
     const conditions = [
-      eq(users.department, scope.department),
+      eq(notes.department, scopedDepartment),
       eq(users.year, scope.year),
       sql<boolean>`DATE(${notes.createdAt}) = ${date}`,
     ];
@@ -313,6 +478,7 @@ export class DatabaseStorage implements IStorage {
       const searchCondition = or(
         ilike(notes.title, `%${searchNormalized}%`),
         ilike(notes.subject, `%${searchNormalized}%`),
+        ilike(notes.department, `%${searchNormalized}%`),
         ilike(notes.description, `%${searchNormalized}%`),
         ilike(users.username, `%${searchNormalized}%`),
       );
@@ -324,6 +490,7 @@ export class DatabaseStorage implements IStorage {
         id: notes.id,
         title: notes.title,
         subject: notes.subject,
+        department: notes.department,
         semester: notes.semester,
         description: notes.description,
         fileUrl: notes.fileUrl,
@@ -343,23 +510,44 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getAllNotes(search?: string): Promise<(Note & { author: string })[]> {
-    const searchNormalized = search?.trim();
+  async getAllNotes(filters: AllNotesFilters = {}): Promise<(Note & { author: string })[]> {
+    const searchNormalized = filters.search?.trim();
+    const conditions = [];
 
-    const searchCondition = searchNormalized
-      ? or(
-          ilike(notes.title, `%${searchNormalized}%`),
-          ilike(notes.subject, `%${searchNormalized}%`),
-          ilike(notes.description, `%${searchNormalized}%`),
-          ilike(users.username, `%${searchNormalized}%`),
-        )
-      : undefined;
+    if (searchNormalized) {
+      const searchCondition = or(
+        ilike(notes.title, `%${searchNormalized}%`),
+        ilike(notes.subject, `%${searchNormalized}%`),
+        ilike(notes.department, `%${searchNormalized}%`),
+        ilike(notes.description, `%${searchNormalized}%`),
+        ilike(users.username, `%${searchNormalized}%`),
+      );
+      if (searchCondition) conditions.push(searchCondition);
+    }
+
+    if (filters.uploadedBy) {
+      conditions.push(eq(users.role, filters.uploadedBy));
+    }
+
+    if (filters.department) {
+      conditions.push(
+        sql`lower(${notes.department}) = ${normalizeDepartmentName(filters.department).toLowerCase()}`,
+      );
+    }
+
+    const semesterNumber = extractSemesterNumber(filters.semester);
+    if (semesterNumber) {
+      conditions.push(
+        sql`regexp_replace(lower(${notes.semester}), '[^0-9]', '', 'g') = ${semesterNumber}`,
+      );
+    }
 
     const baseQuery = this.db
       .select({
         id: notes.id,
         title: notes.title,
         subject: notes.subject,
+        department: notes.department,
         semester: notes.semester,
         description: notes.description,
         fileUrl: notes.fileUrl,
@@ -371,9 +559,8 @@ export class DatabaseStorage implements IStorage {
       .from(notes)
       .leftJoin(users, eq(notes.userId, users.id));
 
-    const results = await (searchCondition ? baseQuery.where(searchCondition) : baseQuery).orderBy(
-      desc(notes.createdAt),
-    );
+    const results = await (conditions.length ? baseQuery.where(and(...conditions)) : baseQuery)
+      .orderBy(desc(notes.createdAt));
 
     return results.map((row) => ({
       ...row,
@@ -385,11 +572,14 @@ export class DatabaseStorage implements IStorage {
     id: number,
     scope: CohortScope,
   ): Promise<(Note & { author: string }) | undefined> {
+    const scopedDepartment = normalizeDepartmentName(scope.department);
+
     const [note] = await this.db
       .select({
         id: notes.id,
         title: notes.title,
         subject: notes.subject,
+        department: notes.department,
         semester: notes.semester,
         description: notes.description,
         fileUrl: notes.fileUrl,
@@ -403,7 +593,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(notes.id, id),
-          eq(users.department, scope.department),
+          eq(notes.department, scopedDepartment),
           eq(users.year, scope.year),
         ),
       );
@@ -422,6 +612,7 @@ export class DatabaseStorage implements IStorage {
         id: notes.id,
         title: notes.title,
         subject: notes.subject,
+        department: notes.department,
         semester: notes.semester,
         description: notes.description,
         fileUrl: notes.fileUrl,
@@ -448,6 +639,7 @@ export class DatabaseStorage implements IStorage {
         id: notes.id,
         title: notes.title,
         subject: notes.subject,
+        department: notes.department,
         semester: notes.semester,
         description: notes.description,
         fileUrl: notes.fileUrl,
@@ -475,6 +667,7 @@ export class DatabaseStorage implements IStorage {
         id: notes.id,
         title: notes.title,
         subject: notes.subject,
+        department: notes.department,
         semester: notes.semester,
         description: notes.description,
         fileUrl: notes.fileUrl,
@@ -508,16 +701,38 @@ export class MemoryStorage implements IStorage {
   sessionStore: session.Store;
 
   private nextUserId = 1;
+  private nextDepartmentId = 1;
   private nextNoteId = 1;
   private nextDownloadId = 1;
 
   private users: User[] = [];
+  private departments: Department[] = [];
   private notes: Note[] = [];
   private downloads: { id: number; userId: number; noteId: number; createdAt: Date }[] =
     [];
 
   constructor() {
     this.sessionStore = new session.MemoryStore();
+    DEFAULT_DEPARTMENTS.forEach((name) => {
+      this.ensureDepartment(name);
+    });
+  }
+
+  private ensureDepartment(name: string): Department {
+    const normalizedName = normalizeDepartmentName(name);
+    const existing = this.departments.find(
+      (department) => department.name.toLowerCase() === normalizedName.toLowerCase(),
+    );
+    if (existing) return existing;
+
+    const created: Department = {
+      id: this.nextDepartmentId++,
+      name: normalizedName,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.departments.push(created);
+    return created;
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -546,7 +761,13 @@ export class MemoryStorage implements IStorage {
     return this.users.find((u) => u.mobileNumber === mobileNumber || u.phone === mobileNumber);
   }
 
+  async listDepartments(): Promise<Department[]> {
+    return sortDepartments(this.departments);
+  }
+
   async createUser(user: InsertUser): Promise<User> {
+    const department = user.department ? this.ensureDepartment(user.department).name : null;
+
     const created: User = {
       id: this.nextUserId++,
       username: user.username,
@@ -559,7 +780,7 @@ export class MemoryStorage implements IStorage {
       role: user.role ?? null,
       isEmailVerified: user.isEmailVerified ?? false,
       isMobileVerified: user.isMobileVerified ?? false,
-      department: user.department ?? null,
+      department,
       year: user.year ?? null,
       createdAt: user.createdAt ?? new Date(),
       updatedAt: user.updatedAt ?? new Date(),
@@ -574,7 +795,7 @@ export class MemoryStorage implements IStorage {
       throw new Error("User not found");
     }
 
-    user.department = profile.department;
+    user.department = this.ensureDepartment(profile.department).name;
     user.year = profile.year;
     user.updatedAt = new Date();
     return user;
@@ -596,9 +817,12 @@ export class MemoryStorage implements IStorage {
   }
 
   async createNote(note: InsertNote & { userId: number }): Promise<Note> {
+    const department = this.ensureDepartment(note.department).name;
+
     const created: Note = {
       id: this.nextNoteId++,
       createdAt: new Date(),
+      department,
       description: note.description ?? null,
       fileName: note.fileName,
       fileUrl: note.fileUrl,
@@ -625,10 +849,11 @@ export class MemoryStorage implements IStorage {
     search?: string,
   ): Promise<(Note & { author: string })[]> {
     const searchNormalized = search?.trim().toLowerCase();
+    const scopedDepartment = normalizeDepartmentName(scope.department);
 
     const filteredByCohort = this.notes.filter((note) => {
       const author = this.users.find((u) => u.id === note.userId);
-      return author?.department === scope.department && author?.year === scope.year;
+      return note.department === scopedDepartment && author?.year === scope.year;
     });
 
     const filtered = searchNormalized
@@ -637,6 +862,7 @@ export class MemoryStorage implements IStorage {
           const haystacks = [
             note.title,
             note.subject,
+            note.department,
             note.description ?? "",
             note.semester,
             author,
@@ -661,24 +887,46 @@ export class MemoryStorage implements IStorage {
     return results;
   }
 
-  async getAllNotes(search?: string): Promise<(Note & { author: string })[]> {
-    const searchNormalized = search?.trim().toLowerCase();
+  async getAllNotes(filters: AllNotesFilters = {}): Promise<(Note & { author: string })[]> {
+    const searchNormalized = filters.search?.trim().toLowerCase();
+    const departmentNormalized = filters.department
+      ? normalizeDepartmentName(filters.department)
+      : undefined;
+    const semesterNumber = extractSemesterNumber(filters.semester);
 
-    const filtered = searchNormalized
-      ? this.notes.filter((note) => {
-          const author = this.users.find((u) => u.id === note.userId)?.username || "Unknown";
-          const haystacks = [
-            note.title,
-            note.subject,
-            note.description ?? "",
-            note.semester,
-            author,
-          ]
-            .join(" ")
-            .toLowerCase();
-          return haystacks.includes(searchNormalized);
-        })
-      : this.notes.slice();
+    const filtered = this.notes.filter((note) => {
+      const authorUser = this.users.find((u) => u.id === note.userId);
+      const author = authorUser?.username || "Unknown";
+      const authorRole = authorUser?.role ?? "student";
+
+      if (filters.uploadedBy && authorRole !== filters.uploadedBy) {
+        return false;
+      }
+
+      if (departmentNormalized && note.department !== departmentNormalized) {
+        return false;
+      }
+
+      if (semesterNumber && extractSemesterNumber(note.semester) !== semesterNumber) {
+        return false;
+      }
+
+      if (!searchNormalized) {
+        return true;
+      }
+
+      const haystacks = [
+        note.title,
+        note.subject,
+        note.department,
+        note.description ?? "",
+        note.semester,
+        author,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystacks.includes(searchNormalized);
+    });
 
     return filtered
       .slice()
@@ -711,11 +959,12 @@ export class MemoryStorage implements IStorage {
     id: number,
     scope: CohortScope,
   ): Promise<(Note & { author: string }) | undefined> {
+    const scopedDepartment = normalizeDepartmentName(scope.department);
     const note = this.notes.find((n) => n.id === id);
     if (!note) return undefined;
     const authorUser = this.users.find((u) => u.id === note.userId);
     if (
-      authorUser?.department !== scope.department ||
+      note.department !== scopedDepartment ||
       authorUser?.year !== scope.year
     ) {
       return undefined;

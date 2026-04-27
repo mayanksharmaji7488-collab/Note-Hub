@@ -1,5 +1,6 @@
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/hooks/use-auth";
+import { useDepartments } from "@/hooks/use-departments";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
@@ -53,21 +54,26 @@ function statusBadge(verified: boolean) {
 }
 
 export default function ProfilePage() {
-  const { user, changePassword, isChangingPassword } = useAuth();
+  const {
+    user,
+    changePassword,
+    isChangingPassword,
+    updateProfile: updateAcademicProfile,
+    isUpdatingProfile,
+  } = useAuth();
   const { profile, isLoading, updateProfile, isUpdating, verifyEmail, verifyMobile } =
     useUserProfile();
   const [, setLocation] = useLocation();
+  const { departments, total: departmentCount } = useDepartments({ enabled: !!user });
 
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [mobileDialogOpen, setMobileDialogOpen] = useState(false);
   const [emailCode, setEmailCode] = useState("");
   const [mobileCode, setMobileCode] = useState("");
+  const [academicDepartment, setAcademicDepartment] = useState("");
+  const [newDepartmentName, setNewDepartmentName] = useState("");
+  const [academicYear, setAcademicYear] = useState<number>(1);
   const otpSlots = useMemo(() => Array.from({ length: 6 }, (_, i) => i), []);
-
-  if (!user) {
-    setLocation("/auth");
-    return null;
-  }
 
   const form = useForm<UserIdentityUpdateInput>({
     resolver: zodResolver(userIdentityUpdateSchema),
@@ -91,10 +97,22 @@ export default function ProfilePage() {
     });
   }, [profile, form]);
 
+  useEffect(() => {
+    if (!profile) return;
+    setAcademicDepartment(profile.department ?? "");
+    setNewDepartmentName("");
+    setAcademicYear(profile.year ?? 1);
+  }, [profile]);
+
   const passwordForm = useForm<ChangePasswordInput>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: { currentPassword: "", newPassword: "" },
   });
+
+  if (!user) {
+    setLocation("/auth");
+    return null;
+  }
 
   return (
     <Layout>
@@ -275,6 +293,85 @@ export default function ProfilePage() {
                     </Card>
                   </form>
                 </Form>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card rounded-3xl border-border/60">
+              <CardHeader>
+                <CardTitle className="text-xl font-display">Academic Profile</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2 md:col-span-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium">Department</span>
+                      <span className="text-xs text-muted-foreground">
+                        {departmentCount} department{departmentCount === 1 ? "" : "s"} available
+                      </span>
+                    </div>
+                    <Select value={academicDepartment} onValueChange={setAcademicDepartment}>
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((department) => (
+                          <SelectItem key={department.id} value={department.name}>
+                            {department.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      value={newDepartmentName}
+                      onChange={(e) => setNewDepartmentName(e.target.value)}
+                      placeholder="Create a new department if it is not listed"
+                      className="h-11"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      You can choose an existing branch or create a new one for future uploads.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium">Year</span>
+                    <Select
+                      value={String(academicYear)}
+                      onValueChange={(value) => setAcademicYear(Number(value))}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6].map((year) => (
+                          <SelectItem key={year} value={String(year)}>
+                            Year {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    disabled={isUpdatingProfile}
+                    onClick={async () => {
+                      try {
+                        const department = newDepartmentName.trim() || academicDepartment;
+                        await updateAcademicProfile({
+                          department,
+                          year: academicYear,
+                        });
+                        setNewDepartmentName("");
+                      } catch {
+                        // toast handled in hook
+                      }
+                    }}
+                  >
+                    {isUpdatingProfile ? "Saving..." : "Save academic profile"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 

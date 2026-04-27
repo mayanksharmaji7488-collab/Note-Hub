@@ -3,23 +3,59 @@ import { NoteCard } from "@/components/NoteCard";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
+import { useDepartments } from "@/hooks/use-departments";
 import { useAllNotes } from "@/hooks/use-notes";
 import { BookOpen, FilterX, Search } from "lucide-react";
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 import { Link, useLocation } from "wouter";
+
+const ALL_FILTER_VALUE = "__all__";
 
 export default function AllNotesPage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
+  const [uploadedBy, setUploadedBy] = useState<string>(ALL_FILTER_VALUE);
+  const [department, setDepartment] = useState<string>(ALL_FILTER_VALUE);
+  const [semester, setSemester] = useState<string>(ALL_FILTER_VALUE);
+  const deferredSearch = useDeferredValue(search);
 
   if (!user) {
     setLocation("/auth");
     return null;
   }
 
-  const { data: notes, isLoading, error } = useAllNotes(search, { enabled: !!user });
+  const { departments } = useDepartments({ enabled: !!user });
+  const filters = {
+    uploadedBy:
+      uploadedBy === ALL_FILTER_VALUE ? undefined : (uploadedBy as "faculty" | "student"),
+    department: department === ALL_FILTER_VALUE ? undefined : department,
+    semester: semester === ALL_FILTER_VALUE ? undefined : semester,
+  };
+  const activeFilterCount =
+    Number(uploadedBy !== ALL_FILTER_VALUE) +
+    Number(department !== ALL_FILTER_VALUE) +
+    Number(semester !== ALL_FILTER_VALUE);
+  const hasActiveSearch = search.trim().length > 0;
+  const hasActiveFilters = hasActiveSearch || activeFilterCount > 0;
+
+  const { data: notes, isLoading, error } = useAllNotes(deferredSearch, filters, {
+    enabled: !!user,
+  });
+
+  const resetFilters = () => {
+    setUploadedBy(ALL_FILTER_VALUE);
+    setDepartment(ALL_FILTER_VALUE);
+    setSemester(ALL_FILTER_VALUE);
+  };
 
   return (
     <Layout>
@@ -52,10 +88,86 @@ export default function AllNotesPage() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
         <Input
           className="pl-12 h-14 text-lg bg-card/70 backdrop-blur border-border/60 hover:border-primary/35 focus-visible:ring-primary/20 transition-all rounded-2xl"
-          placeholder="Search by title, subject, or author..."
+          placeholder="Search by title, subject, department, or author..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+      </div>
+
+      <div
+        className="glass-card rounded-3xl border-border/60 p-5 md:p-6 mb-8 fade-up"
+        style={{ animationDelay: "120ms" }}
+      >
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Filters</h2>
+            <p className="text-sm text-muted-foreground">
+              {activeFilterCount === 0
+                ? "Showing notes from every uploader, department, and semester."
+                : `${activeFilterCount} filter${activeFilterCount === 1 ? "" : "s"} applied.`}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full md:w-auto"
+            onClick={resetFilters}
+            disabled={activeFilterCount === 0}
+          >
+            <FilterX className="h-4 w-4 mr-2" />
+            Clear filters
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Uploaded by</label>
+            <Select value={uploadedBy} onValueChange={setUploadedBy}>
+              <SelectTrigger className="h-11 bg-card/70">
+                <SelectValue placeholder="All uploaders" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_FILTER_VALUE}>All uploaders</SelectItem>
+                <SelectItem value="faculty">Faculty</SelectItem>
+                <SelectItem value="student">Student</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Department</label>
+            <Select value={department} onValueChange={setDepartment}>
+              <SelectTrigger className="h-11 bg-card/70">
+                <SelectValue placeholder="All departments" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_FILTER_VALUE}>All departments</SelectItem>
+                {departments.map((item) => (
+                  <SelectItem key={item.id} value={item.name}>
+                    {item.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Semester</label>
+            <Select value={semester} onValueChange={setSemester}>
+              <SelectTrigger className="h-11 bg-card/70">
+                <SelectValue placeholder="All semesters" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_FILTER_VALUE}>All semesters</SelectItem>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((value) => (
+                  <SelectItem key={value} value={String(value)}>
+                    Semester {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
       {isLoading ? (
@@ -83,21 +195,21 @@ export default function AllNotesPage() {
       ) : notes?.length === 0 ? (
         <div className="text-center py-32 bg-muted/30 rounded-3xl border border-dashed border-muted-foreground/20 flex flex-col items-center">
           <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
-            {search ? (
+            {hasActiveFilters ? (
               <FilterX className="h-10 w-10 text-muted-foreground" />
             ) : (
               <BookOpen className="h-10 w-10 text-muted-foreground" />
             )}
           </div>
           <h3 className="text-xl font-bold text-foreground">
-            {search ? "No matches found" : "No notes yet"}
+            {hasActiveFilters ? "No matches found" : "No notes yet"}
           </h3>
           <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-            {search
-              ? "Try adjusting your search terms."
+            {hasActiveFilters
+              ? "Try adjusting your search terms or filters."
               : "Be the first to share your knowledge with the community!"}
           </p>
-          {!search && (
+          {!hasActiveFilters && (
             <Link href="/upload">
               <Button variant="outline" className="mt-6">
                 Share a Note
@@ -115,4 +227,3 @@ export default function AllNotesPage() {
     </Layout>
   );
 }
-

@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Layout } from "@/components/Layout";
 import { useCreateNote } from "@/hooks/use-notes";
+import { useDepartments } from "@/hooks/use-departments";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { insertNoteSchema } from "@shared/schema";
@@ -26,7 +27,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, File as FileIcon, X, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // Backend derives fileName/fileUrl from the uploaded file, so they must not block form submit.
 // Also, the DB allows nullable description, but form inputs should never be null.
@@ -39,6 +40,7 @@ export default function UploadPage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { mutateAsync: createNote, isPending } = useCreateNote();
+  const { departments, total: departmentCount } = useDepartments({ enabled: !!user });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const form = useForm<UploadFormValues>({
@@ -46,10 +48,21 @@ export default function UploadPage() {
     defaultValues: {
       title: "",
       subject: "",
+      department: "",
       semester: "",
       description: "",
     },
   });
+
+  useEffect(() => {
+    const currentDepartment = form.getValues("department");
+    if (currentDepartment) return;
+
+    const preferredDepartment = user?.department ?? departments[0]?.name ?? "";
+    if (preferredDepartment) {
+      form.setValue("department", preferredDepartment, { shouldValidate: false });
+    }
+  }, [departments, form, user?.department]);
 
   if (!user) {
     setLocation("/auth");
@@ -65,6 +78,7 @@ export default function UploadPage() {
     const formData = new FormData();
     formData.append("title", data.title);
     formData.append("subject", data.subject);
+    formData.append("department", data.department);
     formData.append("semester", data.semester);
     if (data.description) formData.append("description", data.description);
     formData.append("file", selectedFile);
@@ -169,6 +183,39 @@ export default function UploadPage() {
                 />
 
                 {/* Semester */}
+                <FormField
+                  control={form.control}
+                  name="department"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between gap-3">
+                        <FormLabel>Department</FormLabel>
+                        <span className="text-xs text-muted-foreground">
+                          {departmentCount} department{departmentCount === 1 ? "" : "s"} available
+                        </span>
+                      </div>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select department" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {departments.map((department) => (
+                            <SelectItem key={department.id} value={department.name}>
+                              {department.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Need another branch? Create it from your profile, then it will appear here.
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="semester"
